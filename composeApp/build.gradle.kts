@@ -33,34 +33,37 @@ kotlin {
         androidMain.dependencies {
             implementation(compose.preview)
             implementation(libs.androidx.activity.compose)
+            implementation(libs.androidx.foundation.android)
+            implementation(libs.androidx.material3.android)
         }
         commonMain.dependencies {
             implementation(compose.runtime)
             implementation(compose.foundation)
             implementation(compose.material)
+            implementation(compose.material3)
             implementation(compose.ui)
             implementation(compose.components.resources)
             implementation(compose.components.uiToolingPreview)
             implementation(libs.androidx.lifecycle.viewmodel)
-            implementation(libs.lifecycle.runtime)
+            implementation(libs.androidx.lifecycle.runtime)
             implementation(libs.androidx.lifecycle.runtime.compose)
             implementation(libs.ktor.client.core)
             implementation(libs.ktor.client.cio)
             implementation(kotlin("reflect"))
-            implementation(libs.ktor.ktor.serialization.kotlinx.json)
+            implementation(libs.ktor.serialization.kotlinx.json)
             implementation(libs.ktor.client.content.negotiation)
-
-
+            implementation(libs.ktor.client.logging)
+            implementation(libs.navigation.compose)
         }
     }
 }
 
 android {
-    namespace = "com.federicogiordano.miroriento"
+    namespace = "com.federicogiordano.mirorientatore"
     compileSdk = libs.versions.android.compileSdk.get().toInt()
 
     defaultConfig {
-        applicationId = "com.federicogiordano.miroriento"
+        applicationId = "com.federicogiordano.mirorientatore"
         minSdk = libs.versions.android.minSdk.get().toInt()
         targetSdk = libs.versions.android.targetSdk.get().toInt()
         versionCode = 1
@@ -83,6 +86,13 @@ android {
 }
 
 dependencies {
+    implementation(libs.androidx.material3.android)
+    implementation(libs.androidx.runtime.android)
+    implementation(libs.androidx.navigation.common.ktx)
+    implementation(libs.androidx.navigation.common.android)
+    implementation(libs.androidx.ui.android)
+    implementation(libs.androidx.navigation.runtime.android)
     debugImplementation(compose.uiTooling)
+    implementation(libs.androidx.media3.ui)
 }
 

@@ -1,37 +1,40 @@
 package com.federicogiordano.mirorientatore
 
-import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.foundation.Image
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.material.Button
-import androidx.compose.material.MaterialTheme
-import androidx.compose.material.Text
-import androidx.compose.runtime.*
-import androidx.compose.ui.Alignment
-import androidx.compose.ui.Modifier
-import org.jetbrains.compose.resources.painterResource
-import org.jetbrains.compose.ui.tooling.preview.Preview
-
-import mirorientatore.composeapp.generated.resources.Res
-import mirorientatore.composeapp.generated.resources.compose_multiplatform
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
+import androidx.navigation.NavType
+import androidx.navigation.compose.NavHost
+import androidx.navigation.compose.composable
+import androidx.navigation.compose.rememberNavController
+import androidx.navigation.navArgument
 
 @Composable
-@Preview
-fun App() {
-    MaterialTheme {
-        var showContent by remember { mutableStateOf(false) }
-        Column(Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
-            Button(onClick = { showContent = !showContent }) {
-                Text("Click me!")
-            }
-            AnimatedVisibility(showContent) {
-                val greeting = remember { Greeting().greet() }
-                Column(Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
-                    Image(painterResource(Res.drawable.compose_multiplatform), null)
-                    Text("Compose: $greeting")
-                }
-            }
+fun App(){
+    val navController = rememberNavController()
+
+    NavHost(
+        navController = navController,
+        startDestination = Screens.Home.name
+    ) {
+
+        composable(Screens.Home.name) {
+            HomeView(navController)
+        }
+
+        composable(
+            route = "function/{functionId}",
+            arguments = listOf(navArgument("functionId") { type = NavType.StringType })
+        ) { backStackEntry ->
+            val functionId = backStackEntry.arguments?.getString("functionId")
+
+//            when (functionId) {
+//                "mapping" -> MapsList(navController)
+//                "missions" -> MissionsList(navController)
+//                "sounds" -> SoundsList(navController)
+//                "diagnostics" ->
+//                    FunctionSubScreen(functionId.replace("_", " ").capitalize(), navController)
+//                else -> FunctionSubScreen("Unknown Function", navController)
+//            }
         }
     }
 }

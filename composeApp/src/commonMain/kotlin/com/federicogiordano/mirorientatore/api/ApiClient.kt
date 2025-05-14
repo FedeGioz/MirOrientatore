@@ -1,8 +1,7 @@
-package com.federicogiordano.mirorientatore
+package com.federicogiordano.mirorientatore.api
 
 import io.ktor.client.HttpClient
 import io.ktor.client.engine.cio.CIO
-import io.ktor.util.cio.*
 import io.ktor.client.engine.cio.endpoint
 import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
 import io.ktor.client.plugins.defaultRequest
