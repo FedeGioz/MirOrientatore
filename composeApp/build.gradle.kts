@@ -7,6 +7,7 @@ plugins {
     alias(libs.plugins.androidApplication)
     alias(libs.plugins.composeMultiplatform)
     alias(libs.plugins.composeCompiler)
+    kotlin("plugin.serialization") version libs.versions.kotlin.get()
 }
 
 kotlin {
@@ -50,10 +51,12 @@ kotlin {
             implementation(libs.ktor.client.core)
             implementation(libs.ktor.client.cio)
             implementation(kotlin("reflect"))
-            implementation(libs.ktor.serialization.kotlinx.json)
             implementation(libs.ktor.client.content.negotiation)
             implementation(libs.ktor.client.logging)
             implementation(libs.navigation.compose)
+            implementation(libs.kotlinx.serialization.json)
+            implementation(libs.kotlinx.serialization.json.jvm)
+            implementation(libs.ktor.serialization.kotlinx.json)
         }
     }
 }
@@ -95,4 +98,3 @@ dependencies {
     debugImplementation(compose.uiTooling)
     implementation(libs.androidx.media3.ui)
 }
-

@@ -26,4 +26,3 @@ Studente:
 - Piccolo sondaggio personale e feedback a fine visita mandabile da prof, consigliare magari indirizzo alla fine
 - Alla fine se si riesce a mettere una videocamera sopra si potrebbe mandare il video della visita agli studenti via mail/app
 - Domande al robot, che risponde con AI automaticamente
-- 
