@@ -288,13 +288,21 @@ class RobotWebSocketClient(
         }
     }
 
+    fun startMissionQueue() {
+        // TODO
+    }
+
+    fun stopMissionQueue() {
+        // TODO
+    }
+
     fun disconnect() {
         job?.cancel()
         scope.launch {
             try {
                 session?.close()
                 session = null
-                isConnected = false  // Make sure this happens when session is nulled
+                isConnected = false
                 onConnectionStatus(false, "Disconnected")
             } catch (e: Exception) {
                 println("Error disconnecting: ${e.message}")

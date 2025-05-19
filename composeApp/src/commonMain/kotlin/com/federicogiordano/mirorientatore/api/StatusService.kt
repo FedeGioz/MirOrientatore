@@ -1,5 +1,6 @@
 package com.federicogiordano.mirorientatore.api
 
+import com.federicogiordano.mirage.api.ApiClient
 import com.federicogiordano.mirorientatore.data.RobotStatus
 import io.ktor.client.call.*
 import io.ktor.client.request.*

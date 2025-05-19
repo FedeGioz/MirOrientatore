@@ -6,6 +6,12 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
+import com.federicogiordano.mirorientatore.functions.DiagnosticsScreen
+import com.federicogiordano.mirorientatore.functions.DistanceChart
+import com.federicogiordano.mirorientatore.functions.MapsList
+import com.federicogiordano.mirorientatore.functions.MissionQueue
+import com.federicogiordano.mirorientatore.functions.MissionsList
+import com.federicogiordano.mirorientatore.functions.SoundsList
 
 @Composable
 fun App(){
@@ -26,14 +32,14 @@ fun App(){
         ) { backStackEntry ->
             val functionId = backStackEntry.arguments?.getString("functionId")
 
-//            when (functionId) {
-//                "mapping" -> MapsList(navController)
-//                "missions" -> MissionsList(navController)
-//                "sounds" -> SoundsList(navController)
-//                "diagnostics" ->
-//                    FunctionSubScreen(functionId.replace("_", " ").capitalize(), navController)
+            when (functionId) {
+                "mapping" -> MapsList(navController)
+                "missions" -> MissionsList(navController)
+                "mission_queue" -> MissionQueue(navController)
+                "sounds" -> SoundsList(navController)
+                "diagnostics" -> DiagnosticsScreen(navController)
 //                else -> FunctionSubScreen("Unknown Function", navController)
-//            }
+            }
         }
     }
 }

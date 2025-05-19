@@ -33,6 +33,7 @@ material3 = "1.7.0"
 composeMaterial3 = "1.0.0-alpha32"
 foundationAndroid = "1.8.1"
 material3Android = "1.3.2"
+materialIconsExtended = "1.7.8"
 media3Exoplayer = "1.6.1"
 media3Ui = "1.6.1"
 navigationComposeVersion = "2.8.0-alpha10"
@@ -55,6 +56,7 @@ androidx-lifecycle-viewmodel = { group = "org.jetbrains.androidx.lifecycle", nam
 androidx-lifecycle-runtime-ktx-alt = { group = "org.jetbrains.androidx.lifecycle", name = "lifecycle-runtime-ktx", version.ref = "androidx-lifecycle-ktx" }
 
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "androidx-core-ktx" }
+androidx-material-icons-extended = { module = "androidx.compose.material:material-icons-extended", version.ref = "materialIconsExtended" }
 androidx-test-junit = { group = "androidx.test.ext", name = "junit", version.ref = "androidx-test-junit" }
 androidx-espresso-core = { group = "androidx.test.espresso", name = "espresso-core", version.ref = "androidx-espresso-core" }
 androidx-appcompat = { group = "androidx.appcompat", name = "appcompat", version.ref = "androidx-appcompat" }

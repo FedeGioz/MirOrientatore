@@ -34,7 +34,8 @@ val functionMenuItems = listOf(
     FunctionMenuItem("sounds", "Sounds", "View and play sounds"),
     FunctionMenuItem("mapping", "Mapping", "Create and manage maps"),
     FunctionMenuItem("missions", "Missions", "Create and execute missions"),
-    FunctionMenuItem("diagnostics", "Diagnostics", "System diagnostics and troubleshooting")
+    FunctionMenuItem("diagnostics", "Diagnostics", "System diagnostics and troubleshooting"),
+    FunctionMenuItem("mission_queue", "Mission Queue", "Start, Delete or Reorder Missions")
 )
 
 @Composable

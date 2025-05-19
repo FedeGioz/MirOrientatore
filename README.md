@@ -3,12 +3,12 @@ MirOriento:
 2 App separate: professore e studente
 
 Professore (riciclare app principale):
-- Joystick
-- Gestione manuale sounds
-- Map selector
-- Mission executor
-- Diagnostics
-- Gestione app studenti e robot
+- Joystick FATTO (sistemare gestione stati per bottone)
+- Gestione manuale sounds FATTO (migliorare dialog)
+- Map selector FATTO
+- Mission executor TESTARE
+- Diagnostics TESTARE
+- Gestione app studenti e robot 
 - Starter programmi orientamento --> Pre definiti o con builder --> una volta schiacciato o fa tutto di seguito oppure professore con bottoni ne fa un pezzo alla volta in schermata a parte con bottoni --> percorso + quiz parlati dal robot, 3 indirizzi (info, robotica, logistica) con domande e curiosita' da chiedere, studenti rispondo nel mentre sul telefono con bottoni
 - Editor azioni percorsi orientamento e domande, o solo guid in caso di deletion della missione/sound oppure builder drag and drop
 - Selezione del tipo di indirizzo, cosi magari da fare un tutorial in app dell'app di per se' oppure robot o logistica (OPZ)
