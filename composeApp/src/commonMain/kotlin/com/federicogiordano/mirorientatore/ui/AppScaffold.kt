@@ -4,6 +4,8 @@ import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.List
 import androidx.compose.material.icons.filled.Home
+import androidx.compose.material.icons.filled.Notifications
+import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.Icon
 import androidx.compose.material3.NavigationBar
@@ -48,6 +50,35 @@ fun AppScaffold(
                         }
                     }
                 )
+
+                NavigationBarItem(
+                    icon = { Icon(Icons.Default.Person, contentDescription = "Students") },
+                    label = { Text(Screens.ConnectedStudents.title) },
+                    selected = currentRoute == Screens.ConnectedStudents.name,
+                    onClick = {
+                        if (currentRoute != Screens.ConnectedStudents.name) {
+                            navController.navigate(Screens.ConnectedStudents.name) {
+                                popUpTo(Screens.ConnectedStudents.name)
+                                launchSingleTop = true
+                            }
+                        }
+                    }
+                )
+
+                NavigationBarItem(
+                    icon = { Icon(Icons.Default.Notifications, contentDescription = "Quiz") },
+                    label = { Text(Screens.QuizAnswers.title) },
+                    selected = currentRoute == Screens.QuizAnswers.name,
+                    onClick = {
+                        if (currentRoute != Screens.QuizAnswers.name) {
+                            navController.navigate(Screens.QuizAnswers.name) {
+                                popUpTo(Screens.QuizAnswers.name)
+                                launchSingleTop = true
+                            }
+                        }
+                    }
+                )
+
 //                NavigationBarItem(
 //                    icon = { Icon(Icons.AutoMirrored.Filled.List, contentDescription = "Functions") },
 //                    label = { Text(Screens.Functions.title) },

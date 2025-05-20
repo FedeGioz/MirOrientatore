@@ -11,7 +11,7 @@ import io.ktor.http.ContentType
 import io.ktor.http.contentType
 import io.ktor.http.isSuccess
 
-class StatusService : BaseApiService {
+class StatusService : BaseApiService() {
     suspend fun getStatus(): RobotStatus {
         return try {
             client.get(ApiClient.getEndpoint("status")).body()

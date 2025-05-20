@@ -8,7 +8,7 @@ import io.ktor.http.ContentType
 import io.ktor.http.contentType
 import io.ktor.http.isSuccess
 
-class MappingService : BaseApiService {
+class MappingService : BaseApiService() {
     suspend fun getMaps(): List<RobotMap> {
         return client.get(ApiClient.getEndpoint("maps")).body()
     }

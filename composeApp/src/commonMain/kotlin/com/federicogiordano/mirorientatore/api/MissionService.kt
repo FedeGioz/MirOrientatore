@@ -9,7 +9,7 @@ import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.int
 import kotlinx.serialization.json.jsonPrimitive
 
-class MissionService : BaseApiService {
+class MissionService : BaseApiService() {
     suspend fun getMissions(): List<RobotMission> {
         return client.get(ApiClient.getEndpoint("missions")).body()
     }

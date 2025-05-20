@@ -9,7 +9,7 @@ data class DistanceStatistic(
     val distance: Float?
 )
 
-class StatisticsService : BaseApiService {
+class StatisticsService : BaseApiService() {
     suspend fun getDistanceStats(): List<DistanceStatistic> {
         return client.get(ApiClient.getEndpoint("distance_statistics")).body()
     }

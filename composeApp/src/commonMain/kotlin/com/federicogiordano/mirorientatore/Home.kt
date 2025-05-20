@@ -41,6 +41,8 @@ import kotlinx.coroutines.delay
 
 enum class Screens(val title: String) {
     Home("Home"),
+    ConnectedStudents("Students"),
+    QuizAnswers("Quiz Answers"),
     Functions("Functions"),
     Settings("Settings"),
     Login("Login"),
