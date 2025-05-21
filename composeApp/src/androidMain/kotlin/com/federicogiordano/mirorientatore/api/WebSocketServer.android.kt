@@ -103,7 +103,7 @@ actual class WebSocketServer {
 
             _connectedStudents.value = studentMap.values.toList()
 
-            println("Student disconnected: $studentId")
+            println("Studente disconnesso: $studentId")
         }
     }
 
@@ -120,7 +120,7 @@ actual class WebSocketServer {
         when (message.type) {
             "QUIZ_ANSWER" -> {
                 try {
-                    val studentName = studentMap[senderId]?.name ?: "Unknown Student"
+                    val studentName = studentMap[senderId]?.name ?: "Studente Sconosciuto"
 
                     val answerContent = Json.decodeFromString<HashMap<String, String>>(message.content.toString())
 
@@ -137,13 +137,13 @@ actual class WebSocketServer {
 
                     sendToStudent(senderId, WebSocketMessage(
                         type = "ANSWER_RECEIVED",
-                        content = "Your answer has been received",
+                        content = "La tua risposta è stata ricevuta",
                         sender = "professor"
                     ))
 
-                    println("Received quiz answer from $studentName: ${answerContent["answer"]}")
+                    println("Ricevuta risposta al quiz da $studentName: ${answerContent["answer"]}")
                 } catch (e: Exception) {
-                    println("Error processing quiz answer: ${e.message}")
+                    println("Errore nell'elaborazione della risposta al quiz: ${e.message}")
                 }
             }
 //            "HELP_REQUEST" -> {
@@ -151,7 +151,7 @@ actual class WebSocketServer {
 //            }
             else -> {
                 broadcastMessage(message)
-                println("RECEIVED MESSAGE: ${message.type}")
+                println("MESSAGGIO RICEVUTO: ${message.type}")
             }
         }
     }

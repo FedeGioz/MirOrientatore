@@ -28,7 +28,7 @@ class PortScanner {
             _scanStatus.value = ScanStatus.NotFound
             null
         } catch (e: Exception) {
-            _scanStatus.value = ScanStatus.Error(e.message ?: "Unknown error")
+            _scanStatus.value = ScanStatus.Error(e.message ?: "Errore sconosciuto")
             null
         }
     }

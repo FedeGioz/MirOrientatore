@@ -2,11 +2,10 @@ package com.federicogiordano.mirorientatore.ui
 
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.List
 import androidx.compose.material.icons.filled.Home
+import androidx.compose.material.icons.filled.LibraryBooks
 import androidx.compose.material.icons.filled.Notifications
-import androidx.compose.material.icons.filled.Person
-import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material.icons.filled.People
 import androidx.compose.material3.Icon
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
@@ -44,7 +43,7 @@ fun AppScaffold(
                     onClick = {
                         if (currentRoute != Screens.Home.name) {
                             navController.navigate(Screens.Home.name) {
-                                popUpTo(Screens.Home.name) { inclusive = false }
+                                popUpTo(Screens.Home.name) { inclusive = true }
                                 launchSingleTop = true
                             }
                         }
@@ -52,13 +51,13 @@ fun AppScaffold(
                 )
 
                 NavigationBarItem(
-                    icon = { Icon(Icons.Default.Person, contentDescription = "Students") },
+                    icon = { Icon(Icons.Default.People, contentDescription = "Studenti") },
                     label = { Text(Screens.ConnectedStudents.title) },
                     selected = currentRoute == Screens.ConnectedStudents.name,
                     onClick = {
                         if (currentRoute != Screens.ConnectedStudents.name) {
                             navController.navigate(Screens.ConnectedStudents.name) {
-                                popUpTo(Screens.ConnectedStudents.name)
+                                popUpTo(Screens.Home.name)
                                 launchSingleTop = true
                             }
                         }
@@ -72,26 +71,26 @@ fun AppScaffold(
                     onClick = {
                         if (currentRoute != Screens.QuizAnswers.name) {
                             navController.navigate(Screens.QuizAnswers.name) {
-                                popUpTo(Screens.QuizAnswers.name)
+                                popUpTo(Screens.Home.name)
                                 launchSingleTop = true
                             }
                         }
                     }
                 )
 
-//                NavigationBarItem(
-//                    icon = { Icon(Icons.AutoMirrored.Filled.List, contentDescription = "Functions") },
-//                    label = { Text(Screens.Functions.title) },
-//                    selected = currentRoute == Screens.Functions.name,
-//                    onClick = {
-//                        if (currentRoute != Screens.Functions.name) {
-//                            navController.navigate(Screens.Functions.name) {
-//                                popUpTo(Screens.Home.name)
-//                                launchSingleTop = true
-//                            }
-//                        }
-//                    }
-//                )
+                NavigationBarItem(
+                    icon = { Icon(Icons.Default.LibraryBooks, contentDescription = "Libreria Quiz") },
+                    label = { Text(Screens.QuizLibrary.title) },
+                    selected = currentRoute == Screens.QuizLibrary.name,
+                    onClick = {
+                        if (currentRoute != Screens.QuizLibrary.name) {
+                            navController.navigate(Screens.QuizLibrary.name) {
+                                popUpTo(Screens.Home.name)
+                                launchSingleTop = true
+                            }
+                        }
+                    }
+                )
             }
         }
     ) { innerPadding ->

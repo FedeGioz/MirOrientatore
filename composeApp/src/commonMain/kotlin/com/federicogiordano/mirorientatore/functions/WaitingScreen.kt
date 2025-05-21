@@ -42,7 +42,7 @@ fun WaitingScreen(navController: NavController) {
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         Text(
-            text = "Searching for professor's device",
+            text = "Ricerca del dispositivo del professore in corso",
             style = MaterialTheme.typography.h5
         )
 
@@ -62,7 +62,7 @@ fun WaitingScreen(navController: NavController) {
         Spacer(modifier = Modifier.height(48.dp))
 
         Text(
-            text = "Please wait while we connect you",
+            text = "Attendere mentre ti connettiamo",
             style = MaterialTheme.typography.subtitle1
         )
     }

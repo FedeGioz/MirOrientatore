@@ -3,10 +3,12 @@ package com.federicogiordano.mirorientatore.functions
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -50,7 +52,7 @@ fun QuizPage(navController: NavHostController) {
                     onClick = { showResults = false },
                     text = {
                         Row(verticalAlignment = Alignment.CenterVertically) {
-                            Text("Quiz Management")
+                            Text("Gestione Quiz")
                             if (pendingAnswers.isNotEmpty()) {
                                 Badge { Text(pendingAnswers.size.toString()) }
                             }
@@ -60,7 +62,7 @@ fun QuizPage(navController: NavHostController) {
                 Tab(
                     selected = showResults,
                     onClick = { showResults = true },
-                    text = { Text("Results") }
+                    text = { Text("Risultati") }
                 )
             }
 
@@ -115,11 +117,11 @@ fun QuizManagementScreen(
             ) {
                 if (activeQuiz != null) {
                     Text(
-                        "Active Quiz: ${activeQuiz.title}",
+                        "Quiz Attivo: ${activeQuiz.title}",
                         style = MaterialTheme.typography.titleLarge
                     )
                     Text(
-                        "Questions: ${activeQuiz.questions.size}",
+                        "Domande: ${activeQuiz.questions.size}",
                         style = MaterialTheme.typography.bodyMedium
                     )
                 } else {
@@ -127,16 +129,16 @@ fun QuizManagementScreen(
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Text(
-                            "No active quiz",
+                            "Nessun quiz attivo",
                             style = MaterialTheme.typography.titleMedium
                         )
                         Spacer(modifier = Modifier.weight(1f))
                         Button(
                             onClick = onCreateQuiz
                         ) {
-                            Icon(Icons.Default.Add, contentDescription = "Create Quiz")
+                            Icon(Icons.Default.Add, contentDescription = "Crea Quiz")
                             Spacer(modifier = Modifier.width(4.dp))
-                            Text("Create Quiz")
+                            Text("Crea Quiz")
                         }
                     }
                 }
@@ -146,7 +148,7 @@ fun QuizManagementScreen(
         Spacer(modifier = Modifier.height(16.dp))
 
         Text(
-            "Pending Answers (${pendingAnswers.size})",
+            "Risposte in Sospeso (${pendingAnswers.size})",
             style = MaterialTheme.typography.titleMedium
         )
 
@@ -157,7 +159,7 @@ fun QuizManagementScreen(
                     .height(200.dp),
                 contentAlignment = Alignment.Center
             ) {
-                Text("No pending answers")
+                Text("Nessuna risposta in sospeso")
             }
         } else {
             LazyColumn(
@@ -206,12 +208,12 @@ fun AnswerCard(
             Spacer(modifier = Modifier.height(8.dp))
 
             Text(
-                text = "Question: ${answer.question}",
+                text = "Domanda: ${answer.question}",
                 style = MaterialTheme.typography.bodyMedium
             )
 
             Text(
-                text = "Answer: ${answer.answer}",
+                text = "Risposta: ${answer.answer}",
                 style = MaterialTheme.typography.bodyLarge,
                 modifier = Modifier.padding(vertical = 8.dp)
             )
@@ -227,9 +229,9 @@ fun AnswerCard(
                     ),
                     modifier = Modifier.padding(end = 8.dp)
                 ) {
-                    Icon(Icons.Default.Close, contentDescription = "Incorrect")
+                    Icon(Icons.Default.Close, contentDescription = "Non corretto")
                     Spacer(modifier = Modifier.width(4.dp))
-                    Text("Incorrect")
+                    Text("Non corretto")
                 }
 
                 Button(
@@ -238,9 +240,9 @@ fun AnswerCard(
                         containerColor = MaterialTheme.colorScheme.primary
                     )
                 ) {
-                    Icon(Icons.Default.Check, contentDescription = "Correct")
+                    Icon(Icons.Default.Check, contentDescription = "Corretto")
                     Spacer(modifier = Modifier.width(4.dp))
-                    Text("Correct")
+                    Text("Corretto")
                 }
             }
         }
@@ -266,23 +268,23 @@ fun QuizResultsScreen(
                 modifier = Modifier.padding(16.dp)
             ) {
                 Text(
-                    "Quiz Statistics",
+                    "Statistiche Quiz",
                     style = MaterialTheme.typography.titleLarge
                 )
                 Spacer(modifier = Modifier.height(8.dp))
                 Text(
-                    "Average Score: ${averageScore.roundToInt()}%",
+                    "Punteggio Medio: ${averageScore.roundToInt()}%",
                     style = MaterialTheme.typography.bodyLarge
                 )
                 Text(
-                    "Total Students: ${results.size}",
+                    "Studenti Totali: ${results.size}",
                     style = MaterialTheme.typography.bodyMedium
                 )
             }
         }
 
         Text(
-            "Student Results",
+            "Risultati Studenti",
             style = MaterialTheme.typography.titleMedium,
             modifier = Modifier.padding(bottom = 8.dp)
         )
@@ -334,7 +336,7 @@ fun StudentResultCard(result: StudentQuizResult) {
             )
 
             Text(
-                text = "Score: ${((result.score.toFloat() / result.totalPoints) * 100).roundToInt()}%",
+                text = "Punteggio: ${((result.score.toFloat() / result.totalPoints) * 100).roundToInt()}%",
                 style = MaterialTheme.typography.bodyMedium
             )
         }
@@ -347,47 +349,265 @@ fun CreateQuizDialog(
     onCreateQuiz: (Quiz) -> Unit
 ) {
     var title by remember { mutableStateOf("") }
-    var questions by remember { mutableStateOf(listOf(QuizQuestion(
-        text = "",
-        options = listOf("", "", "", ""),
-        correctOptionIndex = 0
-    ))) }
+    val questions = remember {
+        mutableStateListOf(
+            QuizQuestion(
+                text = "",
+                options = List(2) { "" },
+                correctOptionIndex = 0
+            )
+        )
+    }
+    var titleError by remember { mutableStateOf<String?>(null) }
+    val questionTextErrors = remember { mutableStateListOf<String?>() }
+    val optionTextErrors = remember { mutableStateListOf<List<String?>>() }
+
+
+    fun validateQuiz(): Boolean {
+        var isValid = true
+        titleError = if (title.isBlank()) "Il titolo non può essere vuoto" else null
+        if (titleError != null) isValid = false
+
+        while (questionTextErrors.size < questions.size) questionTextErrors.add(null)
+        while (questionTextErrors.size > questions.size) questionTextErrors.removeLast()
+        while (optionTextErrors.size < questions.size) optionTextErrors.add(emptyList())
+        while (optionTextErrors.size > questions.size) optionTextErrors.removeLast()
+
+        questions.forEachIndexed { index, question ->
+            if (question.text.isBlank()) {
+                questionTextErrors[index] = "La domanda non può essere vuota"
+                isValid = false
+            } else {
+                questionTextErrors[index] = null
+            }
+
+            if (question.options.size < 2) {
+                questionTextErrors[index] = (questionTextErrors[index]?.plus(" ") ?: "") + "Deve avere almeno 2 opzioni."
+                isValid = false
+            }
+
+            val currentOptionErrors = optionTextErrors[index].toMutableList()
+            while (currentOptionErrors.size < question.options.size) currentOptionErrors.add(null)
+            while (currentOptionErrors.size > question.options.size) currentOptionErrors.removeLast()
+            optionTextErrors[index] = currentOptionErrors
+
+            var questionHasOptionError = false
+            question.options.forEachIndexed { optIndex, option ->
+                if (option.isBlank()) {
+                    val mutableCurrentOptionErrors = optionTextErrors[index].toMutableList()
+                    mutableCurrentOptionErrors[optIndex] = "L'opzione non può essere vuota"
+                    optionTextErrors[index] = mutableCurrentOptionErrors
+                    isValid = false
+                    questionHasOptionError = true
+                } else {
+                    val mutableCurrentOptionErrors = optionTextErrors[index].toMutableList()
+                    if (optIndex < mutableCurrentOptionErrors.size) {
+                        mutableCurrentOptionErrors[optIndex] = null
+                        optionTextErrors[index] = mutableCurrentOptionErrors
+                    }
+                }
+            }
+
+            if (question.options.isNotEmpty() && (question.correctOptionIndex < 0 || question.correctOptionIndex >= question.options.size)) {
+                val currentQError = questionTextErrors[index]
+                val newError = "Seleziona una risposta corretta valida."
+                questionTextErrors[index] = if (currentQError != null) "$currentQError $newError" else newError
+                isValid = false
+            }
+        }
+        return isValid
+    }
+
 
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("Create New Quiz") },
+        title = { Text("Crea Nuovo Quiz") },
         text = {
-            Column {
+            Column(modifier = Modifier.heightIn(max = 600.dp)) {
                 OutlinedTextField(
                     value = title,
-                    onValueChange = { title = it },
-                    label = { Text("Quiz Title") },
-                    modifier = Modifier.fillMaxWidth()
+                    onValueChange = { title = it; titleError = null },
+                    label = { Text("Titolo Quiz") },
+                    modifier = Modifier.fillMaxWidth(),
+                    isError = titleError != null
                 )
+                if (titleError != null) {
+                    Text(titleError!!, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall)
+                }
 
                 Spacer(modifier = Modifier.height(16.dp))
 
-                Text("Add questions and options here")
+                Text("Domande:", style = MaterialTheme.typography.titleMedium)
+
+                LazyColumn(modifier = Modifier.weight(1f)) {
+                    itemsIndexed(questions, key = { _, question -> question.id }) { index, question ->
+                        Column(modifier = Modifier.padding(vertical = 8.dp)) {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                OutlinedTextField(
+                                    value = question.text,
+                                    onValueChange = { newText ->
+                                        questions[index] = question.copy(text = newText)
+                                        if (index < questionTextErrors.size) questionTextErrors[index] = null
+                                    },
+                                    label = { Text("Domanda ${index + 1}") },
+                                    modifier = Modifier.weight(1f),
+                                    isError = index < questionTextErrors.size && questionTextErrors[index] != null
+                                )
+                                if (questions.size > 1) {
+                                    IconButton(onClick = {
+                                        questions.removeAt(index)
+                                        if (index < questionTextErrors.size) questionTextErrors.removeAt(index)
+                                        if (index < optionTextErrors.size) optionTextErrors.removeAt(index)
+                                    }) {
+                                        Icon(Icons.Default.Delete, contentDescription = "Rimuovi domanda")
+                                    }
+                                }
+                            }
+                            if (index < questionTextErrors.size && questionTextErrors[index] != null) {
+                                Text(questionTextErrors[index]!!, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall)
+                            }
+
+                            Spacer(modifier = Modifier.height(8.dp))
+                            Text("Opzioni e Risposta Corretta:", style = MaterialTheme.typography.bodyMedium)
+                            question.options.forEachIndexed { optionIndex, optionText ->
+                                Row(
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    modifier = Modifier.fillMaxWidth()
+                                ) {
+                                    RadioButton(
+                                        selected = question.correctOptionIndex == optionIndex,
+                                        onClick = { questions[index] = question.copy(correctOptionIndex = optionIndex) }
+                                    )
+                                    OutlinedTextField(
+                                        value = optionText,
+                                        onValueChange = { newOptionText ->
+                                            val newOptions = question.options.toMutableList()
+                                            newOptions[optionIndex] = newOptionText
+                                            questions[index] = question.copy(options = newOptions)
+                                            if (index < optionTextErrors.size && optionIndex < optionTextErrors[index].size) {
+                                                val currentOptErrs = optionTextErrors[index].toMutableList()
+                                                currentOptErrs[optionIndex] = null
+                                                optionTextErrors[index] = currentOptErrs
+                                            }
+                                        },
+                                        label = { Text("Opzione ${optionIndex + 1}") },
+                                        modifier = Modifier.weight(1f),
+                                        isError = index < optionTextErrors.size &&
+                                                optionIndex < optionTextErrors[index].size &&
+                                                optionTextErrors[index][optionIndex] != null
+                                    )
+                                    if (question.options.size > 2) {
+                                        IconButton(onClick = {
+                                            val currentOptions = question.options.toMutableList()
+                                            currentOptions.removeAt(optionIndex)
+
+                                            var newCorrectIndex = question.correctOptionIndex
+                                            if (newCorrectIndex == optionIndex) {
+                                                newCorrectIndex = 0
+                                            } else if (newCorrectIndex > optionIndex) {
+                                                newCorrectIndex--
+                                            }
+                                            if (newCorrectIndex >= currentOptions.size && currentOptions.isNotEmpty()) {
+                                                newCorrectIndex = currentOptions.size -1
+                                            } else if (currentOptions.isEmpty()) {
+                                                newCorrectIndex = -1
+                                            }
+
+
+                                            questions[index] = question.copy(options = currentOptions, correctOptionIndex = newCorrectIndex)
+
+                                            if (index < optionTextErrors.size) {
+                                                val optErrs = optionTextErrors[index].toMutableList()
+                                                if (optionIndex < optErrs.size) optErrs.removeAt(optionIndex)
+                                                optionTextErrors[index] = optErrs
+                                            }
+                                        }) {
+                                            Icon(Icons.Default.Delete, contentDescription = "Rimuovi opzione")
+                                        }
+                                    }
+                                }
+                                if (index < optionTextErrors.size &&
+                                    optionIndex < optionTextErrors[index].size &&
+                                    optionTextErrors[index][optionIndex] != null
+                                ) {
+                                    Text(
+                                        optionTextErrors[index][optionIndex]!!,
+                                        color = MaterialTheme.colorScheme.error,
+                                        style = MaterialTheme.typography.bodySmall,
+                                        modifier = Modifier.padding(start = 48.dp)
+                                    )
+                                }
+                            }
+                            if (question.options.size < 4) {
+                                TextButton(
+                                    onClick = {
+                                        val newOptions = question.options.toMutableList()
+                                        newOptions.add("")
+                                        questions[index] = question.copy(options = newOptions)
+                                        if (index < optionTextErrors.size) {
+                                            val optErrs = optionTextErrors[index].toMutableList()
+                                            optErrs.add(null)
+                                            optionTextErrors[index] = optErrs
+                                        }
+                                    },
+                                    modifier = Modifier.fillMaxWidth()
+                                ) {
+                                    Icon(Icons.Default.Add, contentDescription = "Aggiungi opzione")
+                                    Spacer(Modifier.width(4.dp))
+                                    Text("Aggiungi Opzione")
+                                }
+                            }
+                        }
+                        if (index < questions.size - 1) {
+                            Divider(modifier = Modifier.padding(vertical = 8.dp))
+                        }
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(8.dp))
+
+                Button(
+                    onClick = {
+                        questions.add(
+                            QuizQuestion(
+                                text = "",
+                                options = List(2) { "" },
+                                correctOptionIndex = 0
+                            )
+                        )
+                        questionTextErrors.add(null)
+                        optionTextErrors.add(List(2) { null })
+                    },
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Icon(Icons.Default.Add, contentDescription = "Aggiungi Domanda")
+                    Spacer(modifier = Modifier.width(4.dp))
+                    Text("Aggiungi Domanda")
+                }
             }
         },
         confirmButton = {
             Button(
                 onClick = {
-                    if (title.isNotBlank()) {
+                    if (validateQuiz()) {
+                        val finalQuestions = questions.map { q ->
+                            val validCorrectIndex = if (q.options.isEmpty()) -1 else q.correctOptionIndex.coerceIn(0, q.options.size - 1)
+                            q.copy(correctOptionIndex = validCorrectIndex)
+                        }
                         val quiz = Quiz(
                             title = title,
-                            questions = questions
+                            questions = finalQuestions.toList()
                         )
                         onCreateQuiz(quiz)
                     }
                 }
             ) {
-                Text("Create")
+                Text("Crea")
             }
         },
         dismissButton = {
             TextButton(onClick = onDismiss) {
-                Text("Cancel")
+                Text("Annulla")
             }
         }
     )
@@ -397,8 +617,8 @@ private fun formatTimestamp(timestamp: Long): String {
     val currentTime = Clock.System.now().toEpochMilliseconds()
     val seconds = (currentTime - timestamp) / 1000
     return when {
-        seconds < 60 -> "Just now"
-        seconds < 3600 -> "${seconds / 60}m ago"
-        else -> "${seconds / 3600}h ago"
+        seconds < 60 -> "Pochi secondi fa"
+        seconds < 3600 -> "${seconds / 60}m fa"
+        else -> "${seconds / 3600}h fa"
     }
 }

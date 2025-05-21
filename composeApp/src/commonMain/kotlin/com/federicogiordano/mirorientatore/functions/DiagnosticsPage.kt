@@ -26,7 +26,7 @@ fun DiagnosticsScreen(navController: NavHostController) {
             isLoading = false
         } catch (e: Exception) {
             isLoading = false
-            errorMessage = "Failed to load statistics: ${e.message}"
+            errorMessage = "Impossibile caricare le statistiche: ${e.message}"
         }
     }
 
@@ -39,7 +39,7 @@ fun DiagnosticsScreen(navController: NavHostController) {
             verticalAlignment = Alignment.CenterVertically
         ) {
             Text(
-                "Diagnostics",
+                "Diagnostica",
                 style = MaterialTheme.typography.headlineMedium
             )
         }
@@ -62,7 +62,7 @@ fun DiagnosticsScreen(navController: NavHostController) {
 fun DistanceChart(data: List<DistanceStatistic>) {
     if (data.isEmpty()) {
         Box(modifier = Modifier.fillMaxWidth().height(300.dp), contentAlignment = Alignment.Center) {
-            Text("No distance data available")
+            Text("Nessun dato sulla distanza disponibile")
         }
         return
     }
@@ -75,7 +75,7 @@ fun DistanceChart(data: List<DistanceStatistic>) {
             .padding(16.dp)
     ) {
         Text(
-            "GetDistance_statistics",
+            "Statistiche GetDistance",
             style = MaterialTheme.typography.titleMedium
         )
 
@@ -146,12 +146,12 @@ fun DistanceChart(data: List<DistanceStatistic>) {
                 }
 
                 Text(
-                    "Distance (m)",
+                    "Distanza (m)",
                     style = MaterialTheme.typography.bodySmall,
                     modifier = Modifier.align(Alignment.TopStart).padding(start = 4.dp)
                 )
                 Text(
-                    "Date",
+                    "Data",
                     style = MaterialTheme.typography.bodySmall,
                     modifier = Modifier.align(Alignment.BottomEnd).padding(end = 4.dp, bottom = 4.dp)
                 )
@@ -163,8 +163,8 @@ fun DistanceChart(data: List<DistanceStatistic>) {
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
-            Text("Date", style = MaterialTheme.typography.bodyMedium)
-            Text("Distance (m)", style = MaterialTheme.typography.bodyMedium)
+            Text("Data", style = MaterialTheme.typography.bodyMedium)
+            Text("Distanza (m)", style = MaterialTheme.typography.bodyMedium)
         }
         Divider(modifier = Modifier.padding(vertical = 8.dp))
 
@@ -175,8 +175,8 @@ fun DistanceChart(data: List<DistanceStatistic>) {
                     .padding(vertical = 4.dp),
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
-                Text(stat.date ?: "N/A", style = MaterialTheme.typography.bodySmall)
-                Text(stat.distance?.toString() ?: "N/A", style = MaterialTheme.typography.bodySmall)
+                Text(stat.date ?: "N/D", style = MaterialTheme.typography.bodySmall)
+                Text(stat.distance?.toString() ?: "N/D", style = MaterialTheme.typography.bodySmall)
             }
         }
     }

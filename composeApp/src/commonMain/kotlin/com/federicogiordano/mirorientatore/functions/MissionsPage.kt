@@ -44,7 +44,7 @@ fun MissionsList(navController: NavHostController) {
         modifier = Modifier.fillMaxSize().padding(16.dp)
     ) {
         Text(
-            "Missions List",
+            "Lista Missioni",
             style = MaterialTheme.typography.headlineSmall,
             modifier = Modifier.padding(bottom = 16.dp)
         )

@@ -43,12 +43,12 @@ fun ConnectedStudentsPage(navController: NavHostController) {
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
                 Text(
-                    "Connected Students",
+                    "Studenti Connessi",
                     style = MaterialTheme.typography.headlineMedium
                 )
 
                 Text(
-                    "Total: ${connectedStudents.size}",
+                    "Totale: ${connectedStudents.size}",
                     style = MaterialTheme.typography.bodyLarge
                 )
             }
@@ -58,7 +58,7 @@ fun ConnectedStudentsPage(navController: NavHostController) {
                     modifier = Modifier.fillMaxSize(),
                     contentAlignment = Alignment.Center
                 ) {
-                    Text("No students connected", style = MaterialTheme.typography.bodyLarge)
+                    Text("Nessuno studente connesso", style = MaterialTheme.typography.bodyLarge)
                 }
             } else {
                 LazyVerticalGrid(
@@ -74,7 +74,7 @@ fun ConnectedStudentsPage(navController: NavHostController) {
                                 scope.launch {
                                     webSocketServer.sendToStudent(
                                         student.id,
-                                        WebSocketMessage("DISCONNECT", "Disconnected by professor", "professor")
+                                        WebSocketMessage("DISCONNECT", "Disconnesso dal professore", "professor")
                                     )
                                 }
                             }
@@ -114,7 +114,7 @@ fun StudentCard(student: StudentConnection, onDisconnect: () -> Unit) {
             IconButton(onClick = onDisconnect) {
                 Icon(
                     imageVector = Icons.Default.Close,
-                    contentDescription = "Disconnect",
+                    contentDescription = "Disconnetti",
                     tint = MaterialTheme.colorScheme.error
                 )
             }

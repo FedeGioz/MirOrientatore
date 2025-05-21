@@ -3,28 +3,79 @@ package com.federicogiordano.mirorientatore.api
 import com.federicogiordano.mirorientatore.data.*
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
-import kotlinx.serialization.encodeToString
+import kotlinx.coroutines.withContext
+import kotlinx.serialization.builtins.ListSerializer
 import kotlinx.serialization.json.Json
+import kotlin.concurrent.Volatile
 
-class QuizService : BaseApiService() {
-    private val serviceScope = CoroutineScope(Dispatchers.Main)
+class QuizService private constructor() {
+    private val serviceScope = CoroutineScope(Dispatchers.Main + SupervisorJob())
+    private val json = Json { prettyPrint = true; ignoreUnknownKeys = true; encodeDefaults = true }
+    private val quizzesFileName = "available_quizzes.json"
 
     private val _activeQuiz = MutableStateFlow<Quiz?>(null)
-    val activeQuiz = _activeQuiz.asStateFlow()
+    val activeQuiz: StateFlow<Quiz?> = _activeQuiz.asStateFlow()
 
-    private val _studentResults = MutableStateFlow(mapOf<String, StudentQuizResult>())
-    val studentResults = _studentResults.asStateFlow()
+    private val _studentResults = MutableStateFlow<kotlin.collections.Map<String, StudentQuizResult>>(kotlin.collections.emptyMap<String, StudentQuizResult>())
+    val studentResults: StateFlow<kotlin.collections.Map<String, StudentQuizResult>> = _studentResults.asStateFlow()
 
-    private val _pendingAnswers = MutableStateFlow<List<QuizAnswer>>(emptyList())
-    val pendingAnswers = _pendingAnswers.asStateFlow()
+    private val _pendingAnswers = MutableStateFlow<kotlin.collections.List<QuizAnswer>>(kotlin.collections.emptyList())
+    val pendingAnswers: StateFlow<kotlin.collections.List<QuizAnswer>> = _pendingAnswers.asStateFlow()
+
+    private val _availableQuizzes = MutableStateFlow<kotlin.collections.List<Quiz>>(kotlin.collections.emptyList())
+    val availableQuizzes: StateFlow<kotlin.collections.List<Quiz>> = _availableQuizzes.asStateFlow()
+
+    init {
+        serviceScope.launch {
+            loadPersistedQuizzes()
+        }
+    }
+
+    private suspend fun loadPersistedQuizzes() {
+        withContext(Dispatchers.Default) {
+            try {
+                val fileContent = FileSystem.readTextFromFile(quizzesFileName)
+                if (fileContent != null) {
+                    val quizzes = json.decodeFromString(ListSerializer(Quiz.serializer()), fileContent)
+                    _availableQuizzes.value = quizzes.sortedBy { it.title }
+                    println("Successfully loaded ${_availableQuizzes.value.size} quizzes from $quizzesFileName")
+                } else {
+                    _availableQuizzes.value = kotlin.collections.emptyList()
+                    println("No persisted quizzes file found or content was null: $quizzesFileName. Initializing with empty list.")
+                }
+            } catch (e: Exception) {
+                println("Error loading persisted quizzes: ${e.message}")
+                e.printStackTrace()
+                _availableQuizzes.value = kotlin.collections.emptyList()
+            }
+        }
+    }
+
+    private suspend fun persistQuizzes() {
+        withContext(Dispatchers.Default) {
+            try {
+                val quizzesJson = json.encodeToString(ListSerializer(Quiz.serializer()), _availableQuizzes.value)
+                val success = FileSystem.writeTextToFile(quizzesFileName, quizzesJson)
+                if (success) {
+                    println("Successfully persisted ${_availableQuizzes.value.size} quizzes to $quizzesFileName")
+                } else {
+                    println("Failed to persist quizzes to $quizzesFileName")
+                }
+            } catch (e: Exception) {
+                println("Error persisting quizzes: ${e.message}")
+                e.printStackTrace()
+            }
+        }
+    }
 
     suspend fun sendQuizToStudents(quiz: Quiz) {
+        resetActiveSessionData()
         _activeQuiz.value = quiz
-
         val webSocketServer = WebSocketServerManager.getInstance()
         webSocketServer.broadcastMessage(
             WebSocketMessage(
@@ -36,29 +87,27 @@ class QuizService : BaseApiService() {
     }
 
     fun addAnswer(answer: QuizAnswer) {
-        val currentAnswers = _pendingAnswers.value
-        _pendingAnswers.value = currentAnswers + answer
+        if (_activeQuiz.value != null && _activeQuiz.value?.id == answer.quizId) {
+            _pendingAnswers.value = _pendingAnswers.value + answer
+        }
     }
 
     fun evaluateAnswer(answerId: String, isCorrect: Boolean) {
-        val currentAnswers = _pendingAnswers.value
-        val answer = currentAnswers.find { answerItem -> answerItem.id == answerId } ?: return
+        val answer = _pendingAnswers.value.find { it.id == answerId } ?: return
+        val currentActiveQuiz = _activeQuiz.value
+        if (currentActiveQuiz == null || answer.quizId != currentActiveQuiz.id) return
+
         val evaluatedAnswer = answer.copy(isCorrect = isCorrect)
-
         updateStudentResult(evaluatedAnswer)
-
-        _pendingAnswers.value = currentAnswers.filter { answerItem -> answerItem.id != answerId }
+        _pendingAnswers.value = _pendingAnswers.value.filterNot { it.id == answerId }
 
         serviceScope.launch {
             val webSocketServer = WebSocketServerManager.getInstance()
             webSocketServer.sendToStudent(
                 evaluatedAnswer.studentId,
                 WebSocketMessage(
-                    type = "QUIZ_RESULT",
-                    content = Json.encodeToString(mapOf(
-                        "answerId" to answerId,
-                        "isCorrect" to isCorrect
-                    )),
+                    type = "ANSWER_EVALUATED",
+                    content = Json.encodeToString(evaluatedAnswer),
                     sender = "professor"
                 )
             )
@@ -67,14 +116,13 @@ class QuizService : BaseApiService() {
 
     private fun updateStudentResult(answer: QuizAnswer) {
         val currentResults = _studentResults.value.toMutableMap()
-
         val studentResult = currentResults[answer.studentId] ?: StudentQuizResult(
             studentId = answer.studentId,
             studentName = answer.studentName,
             quizId = answer.quizId,
             score = 0,
             totalPoints = 0,
-            answers = emptyList()
+            answers = kotlin.collections.emptyList()
         )
 
         val updatedResult = studentResult.copy(
@@ -88,26 +136,73 @@ class QuizService : BaseApiService() {
     }
 
     fun getAverageScore(): Float {
-        val results = _studentResults.value.values
-        if (results.isEmpty()) return 0f
+        val resultsList = _studentResults.value.values.toList()
+        if (resultsList.isEmpty()) return 0f
 
-        val totalScore = results.sumOf { it.score }
-        val totalQuestions = results.sumOf { it.totalPoints }
+        val currentActiveQuiz = _activeQuiz.value
+        val totalPossibleScore = currentActiveQuiz?.questions?.size ?: 0
+        if (totalPossibleScore == 0) return 0f
 
-        return if (totalQuestions > 0) {
-            (totalScore.toFloat() / totalQuestions) * 100
-        } else 0f
+        var totalPercentageSum = 0f
+        var participatingStudentsCount = 0
+
+        resultsList.forEach { studentResult ->
+            if (studentResult.quizId == currentActiveQuiz?.id && studentResult.totalPoints > 0) {
+                totalPercentageSum += (studentResult.score.toFloat() / totalPossibleScore.toFloat()) * 100
+                participatingStudentsCount++
+            }
+        }
+        return if (participatingStudentsCount > 0) totalPercentageSum / participatingStudentsCount.toFloat() else 0f
     }
 
-    fun reset() {
+
+    private fun resetActiveSessionData() {
         _activeQuiz.value = null
-        _studentResults.value = mapOf()
-        _pendingAnswers.value = emptyList()
+        _studentResults.value = kotlin.collections.emptyMap<String, StudentQuizResult>()
+        _pendingAnswers.value = kotlin.collections.emptyList()
+    }
+
+    fun stopActiveQuiz() {
+        resetActiveSessionData()
+    }
+
+
+    fun saveQuiz(quiz: Quiz) {
+        serviceScope.launch {
+            val currentQuizzes = _availableQuizzes.value.toMutableList()
+            val existingIndex = currentQuizzes.indexOfFirst { it.id == quiz.id }
+            if (existingIndex != -1) {
+                currentQuizzes[existingIndex] = quiz
+            } else {
+                currentQuizzes.add(quiz)
+            }
+            _availableQuizzes.value = currentQuizzes.sortedBy { it.title }
+            persistQuizzes()
+        }
+    }
+
+    fun deleteQuiz(quizId: String) {
+        serviceScope.launch {
+            _availableQuizzes.value = _availableQuizzes.value.filterNot { it.id == quizId }
+            persistQuizzes()
+        }
+    }
+
+    fun getQuiz(quizId: String): Quiz? {
+        return _availableQuizzes.value.find { it.id == quizId }
     }
 
     companion object {
-        fun getInstance(): QuizService {
-            return QuizService()
-        }
+        @Volatile
+        private var INSTANCE: QuizService? = null
+        private val lock = Any()
+
+        fun getInstance(context: Any? = null): QuizService =
+            INSTANCE ?: synchronizedBlock(lock) {
+                INSTANCE ?: QuizService().also {
+                    FileSystem.initialize(context)
+                    INSTANCE = it
+                }
+            }
     }
 }

@@ -12,7 +12,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
-import androidx.navigation.NavHostController    
+import androidx.navigation.NavHostController
 import com.federicogiordano.mirorientatore.data.RobotMap
 import kotlinx.coroutines.MainScope
 import kotlinx.coroutines.delay
@@ -43,7 +43,7 @@ fun MapsList(navController: NavHostController) {
         modifier = Modifier.fillMaxSize().padding(16.dp)
     ) {
         Text(
-            "Available Maps",
+            "Mappe disponibili",
             style = MaterialTheme.typography.headlineSmall,
             modifier = Modifier.padding(bottom = 16.dp)
         )
@@ -69,7 +69,7 @@ fun MapsList(navController: NavHostController) {
 
         updateResult?.let {
             Text(
-                text = if (it) "Map updated successfully!" else "Failed to update map",
+                text = if (it) "Mappa aggiornata con successo!" else "Errore durante l'aggiornamento della mappa",
                 color = if (it) Color.Green else Color.Red,
                 modifier = Modifier.padding(top = 8.dp)
             )
@@ -79,8 +79,8 @@ fun MapsList(navController: NavHostController) {
     if (showConfirmation && selectedMap != null) {
         AlertDialog(
             onDismissRequest = { showConfirmation = false },
-            title = { Text("Confirm Map Selection") },
-            text = { Text("Set ${selectedMap?.name ?: ""} as the active map?") },
+            title = { Text("Conferma selezione mappa") },
+            text = { Text("Impostare ${selectedMap?.name ?: ""} come mappa attiva?") },
             confirmButton = {
                 Button(
                     onClick = {
@@ -109,12 +109,12 @@ fun MapsList(navController: NavHostController) {
                     },
                     enabled = !isUpdating
                 ) {
-                    Text("Confirm")
+                    Text("Conferma")
                 }
             },
             dismissButton = {
                 TextButton(onClick = { showConfirmation = false }) {
-                    Text("Cancel")
+                    Text("Annulla")
                 }
             }
         )
@@ -159,7 +159,7 @@ fun MapItem(map: RobotMap, isActive: Boolean, onClick: () -> Unit) {
             if (isActive) {
                 Icon(
                     imageVector = Icons.Default.Check,
-                    contentDescription = "Active Map",
+                    contentDescription = "Mappa attiva",
                     tint = MaterialTheme.colorScheme.primary
                 )
             }

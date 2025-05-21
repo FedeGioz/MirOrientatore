@@ -31,11 +31,11 @@ data class FunctionMenuItem(
 )
 
 val functionMenuItems = listOf(
-    FunctionMenuItem("sounds", "Sounds", "View and play sounds"),
-    FunctionMenuItem("mapping", "Mapping", "Create and manage maps"),
-    FunctionMenuItem("missions", "Missions", "Create and execute missions"),
-    FunctionMenuItem("diagnostics", "Diagnostics", "System diagnostics and troubleshooting"),
-    FunctionMenuItem("mission_queue", "Mission Queue", "Start, Delete or Reorder Missions")
+    FunctionMenuItem("sounds", "Suoni", "Visualizza e riproduci suoni"),
+    FunctionMenuItem("mapping", "Mappatura", "Crea e gestisci mappe"),
+    FunctionMenuItem("missions", "Missioni", "Crea ed esegui missioni"),
+    FunctionMenuItem("diagnostics", "Diagnostica", "Diagnostica di sistema e risoluzione problemi"),
+    FunctionMenuItem("mission_queue", "Coda Missioni", "Avvia, elimina o riordina missioni")
 )
 
 @Composable
@@ -81,7 +81,7 @@ fun FunctionMenuCard(item: FunctionMenuItem, onClick: () -> Unit) {
             }
             Icon(
                 imageVector = Icons.AutoMirrored.Filled.ArrowForward,
-                contentDescription = "Go to ${item.title}",
+                contentDescription = "Vai a ${item.title}",
                 tint = MaterialTheme.colorScheme.primary
             )
         }
@@ -106,7 +106,7 @@ fun FunctionSubScreen(
         )
         Spacer(modifier = Modifier.height(16.dp))
         Text(
-            text = "$title submenu",
+            text = "Sottomenu di $title",
             style = MaterialTheme.typography.bodyLarge
         )
     }

@@ -8,8 +8,6 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.Button
 import androidx.compose.material.ButtonDefaults
 import androidx.compose.material.Card
@@ -41,13 +39,11 @@ import kotlinx.coroutines.delay
 
 enum class Screens(val title: String) {
     Home("Home"),
-    ConnectedStudents("Students"),
-    QuizAnswers("Quiz Answers"),
-    Functions("Functions"),
-    Settings("Settings"),
-    Login("Login"),
-    Registration("Registration"),
-    Waiting("Connecting")
+    ConnectedStudents("Studenti Connessi"),
+    QuizAnswers("Quiz Attivi"),
+    QuizLibrary("Libreria Quiz"),
+    Registration("Registrazione"),
+    Waiting("Connessione in corso"),
 }
 
 @Composable
@@ -74,7 +70,7 @@ fun HomeView(
 
     AppScaffold(
         navController = navController,
-        currentScreen = Screens.Home
+        currentScreen = Screens.Home,
     ) { innerPadding ->
         Column(
             modifier = Modifier
@@ -108,7 +104,7 @@ fun HomeView(
                                 Icons.Default.KeyboardArrowUp
                             else
                                 Icons.Default.KeyboardArrowDown,
-                            contentDescription = if (isJoystickExpanded) "Collapse" else "Expand"
+                            contentDescription = if (isJoystickExpanded) "Comprimi" else "Espandi"
                         )
                     }
 
@@ -131,9 +127,9 @@ fun HomeView(
                         ) {
                             Text(
                                 text = when {
-                                    !isButtonEnabled -> "Manual Control Unavailable"
-                                    isConnected -> "Manual Control Active"
-                                    else -> "Activate Manual Control"
+                                    !isButtonEnabled -> "Controllo Manuale Non Disponibile"
+                                    isConnected -> "Controllo Manuale Attivo"
+                                    else -> "Attiva Controllo Manuale"
                                 }
                             )
                         }

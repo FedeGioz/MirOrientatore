@@ -46,7 +46,7 @@ fun SoundsList(navController: NavHostController){
         modifier = Modifier.fillMaxSize().padding(16.dp)
     ) {
         Text(
-            "Sounds List",
+            "Lista Suoni",
             style = MaterialTheme.typography.headlineSmall,
             modifier = Modifier.padding(bottom = 16.dp)
         )
@@ -79,15 +79,15 @@ fun SoundsList(navController: NavHostController){
                             selectedSound = null
                         }
                     ){
-                        Icon(Icons.Default.Close, contentDescription = "Close")
+                        Icon(Icons.Default.Close, contentDescription = "Chiudi")
                     }
                 }
             },
             title = {
-                Text(text = "Play sound")
+                Text(text = "Riproduci suono")
             },
             text = {
-                Text(text = "Do you want to play the sound on the robot or on the device?")
+                Text(text = "Vuoi riprodurre il suono sul robot o sul dispositivo?")
             },
             onDismissRequest = {},
             confirmButton = {
@@ -106,7 +106,7 @@ fun SoundsList(navController: NavHostController){
                         selectedSound = null
                     }
                 ) {
-                    Icon(Icons.Filled.Close, contentDescription = "Close")
+                    Icon(Icons.Filled.Close, contentDescription = "Chiudi")
                 }
             },
         )

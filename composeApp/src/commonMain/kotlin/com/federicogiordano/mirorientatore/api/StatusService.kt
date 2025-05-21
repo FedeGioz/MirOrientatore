@@ -25,7 +25,7 @@ class StatusService : BaseApiService() {
             try {
                 emit(getStatus())
             } catch (e: Exception) {
-                emit(RobotStatus(batteryPercentage = 50f, stateText = "Connection Error"))
+                emit(RobotStatus(batteryPercentage = 50f, stateText = "Errore di Connessione"))
             }
             delay(intervalSeconds * 1000)
         }

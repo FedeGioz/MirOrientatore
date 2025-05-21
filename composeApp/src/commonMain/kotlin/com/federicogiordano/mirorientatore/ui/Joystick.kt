@@ -46,7 +46,6 @@ fun JoystickController(
         shape = CircleShape,
         color = MaterialTheme.colors.surface.copy(alpha = 0.9f)
     ) {
-        println("SURFACE CONTROLLER")
         Box(
             contentAlignment = Alignment.Center,
             modifier = Modifier
@@ -60,8 +59,6 @@ fun JoystickController(
                                 newOffset.x * newOffset.x +
                                         newOffset.y * newOffset.y
                             )
-
-                            println("POINTER DRAGGED")
 
                             pointerOffset = if (distance > maxDistancePx) {
                                 val angle = atan2(newOffset.y, newOffset.x)

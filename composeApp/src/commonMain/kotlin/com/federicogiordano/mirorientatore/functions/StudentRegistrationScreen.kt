@@ -30,7 +30,7 @@ fun StudentRegistrationScreen(navController: NavController) {
         verticalArrangement = Arrangement.Center
     ) {
         Text(
-            text = "Student Registration",
+            text = "Registrazione Studente",
             style = MaterialTheme.typography.h4,
             modifier = Modifier.padding(bottom = 32.dp)
         )
@@ -38,7 +38,7 @@ fun StudentRegistrationScreen(navController: NavController) {
         OutlinedTextField(
             value = name,
             onValueChange = { name = it },
-            label = { Text("Full Name") },
+            label = { Text("Nome Completo") },
             modifier = Modifier.fillMaxWidth()
         )
 
@@ -47,14 +47,14 @@ fun StudentRegistrationScreen(navController: NavController) {
         OutlinedTextField(
             value = city,
             onValueChange = { city = it },
-            label = { Text("City of Residence") },
+            label = { Text("Città di Residenza") },
             modifier = Modifier.fillMaxWidth()
         )
 
         Spacer(modifier = Modifier.height(24.dp))
 
         Text(
-            text = "Select your desired school focus:",
+            text = "Seleziona il tuo indirizzo di studio desiderato:",
             style = MaterialTheme.typography.subtitle1,
             modifier = Modifier.align(Alignment.Start)
         )
@@ -87,7 +87,7 @@ fun StudentRegistrationScreen(navController: NavController) {
             modifier = Modifier.fillMaxWidth(),
             enabled = name.isNotBlank() && city.isNotBlank()
         ) {
-            Text("Continue")
+            Text("Continua")
         }
     }
 }

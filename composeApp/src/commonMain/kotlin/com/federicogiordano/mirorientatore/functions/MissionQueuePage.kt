@@ -66,7 +66,7 @@ fun MissionQueue(navController: NavHostController) {
             verticalAlignment = Alignment.CenterVertically
         ) {
             Text(
-                "Mission Queue",
+                "Coda Missioni",
                 style = MaterialTheme.typography.headlineMedium
             )
 
@@ -80,9 +80,9 @@ fun MissionQueue(navController: NavHostController) {
                     containerColor = MaterialTheme.colorScheme.primary
                 )
             ) {
-                Icon(Icons.Default.PlayArrow, contentDescription = "Start")
+                Icon(Icons.Default.PlayArrow, contentDescription = "Avvia")
                 Spacer(modifier = Modifier.width(4.dp))
-                Text("Start")
+                Text("Avvia")
             }
         }
 
@@ -92,7 +92,7 @@ fun MissionQueue(navController: NavHostController) {
             }
         } else if (missionQueue.isEmpty()) {
             Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                Text("No missions in queue", style = MaterialTheme.typography.bodyLarge)
+                Text("Nessuna missione in coda", style = MaterialTheme.typography.bodyLarge)
             }
         } else {
             LazyColumn(modifier = Modifier.fillMaxWidth()) {
@@ -178,7 +178,7 @@ fun MissionQueueItem(
                 ) {
                     Icon(
                         Icons.Default.KeyboardArrowUp,
-                        contentDescription = "Move Up",
+                        contentDescription = "Sposta su",
                         tint = if (canMoveUp) MaterialTheme.colorScheme.primary
                         else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f)
                     )
@@ -190,7 +190,7 @@ fun MissionQueueItem(
                 ) {
                     Icon(
                         Icons.Default.KeyboardArrowDown,
-                        contentDescription = "Move Down",
+                        contentDescription = "Sposta giù",
                         tint = if (canMoveDown) MaterialTheme.colorScheme.primary
                         else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f)
                     )
@@ -199,7 +199,7 @@ fun MissionQueueItem(
                 IconButton(onClick = onRemove) {
                     Icon(
                         Icons.Default.Delete,
-                        contentDescription = "Remove",
+                        contentDescription = "Rimuovi",
                         tint = MaterialTheme.colorScheme.error
                     )
                 }

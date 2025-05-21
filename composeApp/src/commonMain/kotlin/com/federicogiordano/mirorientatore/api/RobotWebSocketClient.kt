@@ -111,8 +111,8 @@ class RobotWebSocketClient(
                 reconnectAttempts = 0
                 connectWithRetry()
             } catch (e: Exception) {
-                onConnectionStatus(false, "Failed to connect: ${e.message}")
-                println("WebSocket connection failed: ${e.message}")
+                onConnectionStatus(false, "Connessione fallita: ${e.message}")
+                println("Connessione WebSocket fallita: ${e.message}")
             }
         }
 
@@ -122,8 +122,8 @@ class RobotWebSocketClient(
     private suspend fun connectWithRetry() {
         while (reconnectAttempts < maxReconnectAttempts && !isConnected) {
             try {
-                onConnectionStatus(false, "Connecting to robot... (attempt ${reconnectAttempts + 1})")
-                println("Attempting to connect to WebSocket (${reconnectAttempts + 1}/$maxReconnectAttempts)")
+                onConnectionStatus(false, "Connessione al robot in corso... (tentativo ${reconnectAttempts + 1})")
+                println("Tentativo di connessione a WebSocket (${reconnectAttempts + 1}/$maxReconnectAttempts)")
 
                 client.webSocket(
                     urlString = serverUrl,
@@ -133,7 +133,7 @@ class RobotWebSocketClient(
                     session = this
                     isConnected = true
                     reconnectAttempts = 0
-                    println("WebSocket connected successfully")
+                    println("WebSocket connesso con successo")
                     onConnectionStatus(true, null)
 
                     try {
@@ -141,11 +141,11 @@ class RobotWebSocketClient(
                             when (frame) {
                                 is Frame.Text -> {
                                     val text = frame.readText()
-                                    println("Received message: $text")
+                                    println("Messaggio ricevuto: $text")
                                     processMessage(text)
                                 }
                                 is Frame.Close -> {
-                                    println("Connection closed: ${frame.readReason()}")
+                                    println("Connessione chiusa: ${frame.readReason()}")
                                     isConnected = false
                                     break
                                 }
@@ -153,24 +153,24 @@ class RobotWebSocketClient(
                             }
                         }
                     } catch (e: Exception) {
-                        println("Error processing incoming frames: ${e.message}")
+                        println("Errore nell'elaborazione dei frame in entrata: ${e.message}")
                         isConnected = false
                     }
                 }
             } catch (e: Exception) {
-                println("WebSocket connection attempt failed: ${e.message}")
+                println("Tentativo di connessione WebSocket fallito: ${e.message}")
                 reconnectAttempts++
 
                 if (reconnectAttempts < maxReconnectAttempts) {
                     val delayTime = (reconnectAttempts * 1000).toLong()
-                    println("Retrying in ${delayTime/1000} seconds...")
+                    println("Riprovo tra ${delayTime/1000} secondi...")
                     delay(delayTime)
                 }
             }
         }
 
         if (!isConnected) {
-            onConnectionStatus(false, "Failed to connect after $maxReconnectAttempts attempts")
+            onConnectionStatus(false, "Connessione fallita dopo $maxReconnectAttempts tentativi")
         }
     }
 
@@ -180,11 +180,11 @@ class RobotWebSocketClient(
                 if (isConnected) {
                     it.send(Frame.Text(message))
                 } else {
-                    println("Cannot send message: WebSocket not connected")
+                    println("Impossibile inviare il messaggio: WebSocket non connesso")
                 }
-            } ?: println("Cannot send message: Session is null")
+            } ?: println("Impossibile inviare il messaggio: La sessione è null")
         } catch (e: Exception) {
-            println("Error sending message: ${e.message}")
+            println("Errore durante l'invio del messaggio: ${e.message}")
             isConnected = false
             connect()
         }
@@ -193,7 +193,7 @@ class RobotWebSocketClient(
     fun sendSoundPlayRequest(soundGuid: String){
         scope.launch{
             if (!isConnected || session == null) {
-                println("Cannot send sound: WebSocket not connected or session is null")
+                println("Impossibile inviare il suono: WebSocket non connesso o sessione è null")
                 connect()
                 return@launch
             }
@@ -212,7 +212,7 @@ class RobotWebSocketClient(
             )
 
             val jsonString = Json.encodeToString(soundRequest)
-            println("SENDING SOUND: $jsonString")
+            println("INVIO SUONO: $jsonString")
 
             sendMessage(jsonString)
         }
@@ -226,23 +226,23 @@ class RobotWebSocketClient(
             if (jsonObject.containsKey("values") &&
                 jsonObject["values"]?.jsonObject?.containsKey("joystick_token") == true) {
                 joystickToken = jsonObject["values"]?.jsonObject?.get("joystick_token")?.jsonPrimitive?.content
-                println("Received joystick token: $joystickToken")
+                println("Token joystick ricevuto: $joystickToken")
             }
         } catch (e: Exception) {
-            println("Error processing message: ${e.message}")
+            println("Errore nell'elaborazione del messaggio: ${e.message}")
         }
     }
 
     fun sendVelocity(linear: Float, angular: Float) {
         scope.launch {
             if (joystickToken == null) {
-                println("Cannot send velocity: No joystick token available")
+                println("Impossibile inviare la velocità: nessun token joystick disponibile")
                 sendMessage("""{"op":"call_service","service":"/mir/get_joystick_token","id":"get_token"}""")
                 return@launch
             }
 
             if (!isConnected || session == null) {
-                println("Cannot send velocity: WebSocket not connected or session is null")
+                println("Impossibile inviare la velocità: WebSocket non connesso o sessione è null")
                 connect()
                 return@launch
             }
@@ -263,7 +263,7 @@ class RobotWebSocketClient(
             )
 
             val jsonString = Json.encodeToString(velocityCommand)
-            println("SENDING VELOCITY: $jsonString")
+            println("INVIO VELOCITÀ: $jsonString")
             sendMessage(jsonString)
         }
     }
@@ -283,7 +283,7 @@ class RobotWebSocketClient(
             )
 
             val jsonString = json.encodeToString(request)
-            println("REQUEST MANUAL: $jsonString")
+            println("RICHIEDO CONTROLLO MANUALE: $jsonString")
             sendMessage(jsonString)
         }
     }
@@ -303,9 +303,9 @@ class RobotWebSocketClient(
                 session?.close()
                 session = null
                 isConnected = false
-                onConnectionStatus(false, "Disconnected")
+                onConnectionStatus(false, "Disconnesso")
             } catch (e: Exception) {
-                println("Error disconnecting: ${e.message}")
+                println("Errore durante la disconnessione: ${e.message}")
             }
         }
     }
