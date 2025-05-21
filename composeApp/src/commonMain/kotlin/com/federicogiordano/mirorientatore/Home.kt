@@ -46,6 +46,8 @@ enum class Screens(val title: String) {
     Functions("Functions"),
     Settings("Settings"),
     Login("Login"),
+    Registration("Registration"),
+    Waiting("Connecting")
 }
 
 @Composable

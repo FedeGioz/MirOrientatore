@@ -17,9 +17,11 @@ import com.federicogiordano.mirorientatore.functions.MissionQueue
 import com.federicogiordano.mirorientatore.functions.MissionsList
 import com.federicogiordano.mirorientatore.functions.QuizPage
 import com.federicogiordano.mirorientatore.functions.SoundsList
+import com.federicogiordano.mirorientatore.functions.StudentRegistrationScreen
+import com.federicogiordano.mirorientatore.functions.WaitingScreen
 
 @Composable
-fun App(){
+fun App() {
     val navController = rememberNavController()
 
     WebSocketServerManager.getInstance().start()
@@ -28,7 +30,6 @@ fun App(){
         navController = navController,
         startDestination = Screens.Home.name
     ) {
-
         composable(Screens.Home.name) {
             HomeView(navController)
         }
@@ -39,6 +40,15 @@ fun App(){
 
         composable(Screens.QuizAnswers.name) {
             QuizPage(navController)
+        }
+
+        // Add these new routes
+        composable(Screens.Registration.name) {
+            StudentRegistrationScreen(navController)
+        }
+
+        composable(Screens.Waiting.name) {
+            WaitingScreen(navController)
         }
 
         composable(
