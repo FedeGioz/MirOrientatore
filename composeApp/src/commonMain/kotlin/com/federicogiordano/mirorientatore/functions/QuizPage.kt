@@ -37,7 +37,7 @@ fun QuizPage(navController: NavHostController) {
 
     AppScaffold(
         navController = navController,
-        currentScreen = Screens.QuizAnswers
+        currentScreen = Screens.QuizLauncher
     ) { innerPadding ->
         Column(
             modifier = Modifier

@@ -66,11 +66,11 @@ fun AppScaffold(
 
                 NavigationBarItem(
                     icon = { Icon(Icons.Default.Notifications, contentDescription = "Quiz") },
-                    label = { Text(Screens.QuizAnswers.title) },
-                    selected = currentRoute == Screens.QuizAnswers.name,
+                    label = { Text(Screens.QuizLauncher.title) },
+                    selected = currentRoute == Screens.QuizLauncher.name,
                     onClick = {
-                        if (currentRoute != Screens.QuizAnswers.name) {
-                            navController.navigate(Screens.QuizAnswers.name) {
+                        if (currentRoute != Screens.QuizLauncher.name) {
+                            navController.navigate(Screens.QuizLauncher.name) {
                                 popUpTo(Screens.Home.name)
                                 launchSingleTop = true
                             }

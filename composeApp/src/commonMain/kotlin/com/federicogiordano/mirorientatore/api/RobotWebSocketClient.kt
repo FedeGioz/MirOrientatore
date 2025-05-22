@@ -289,11 +289,41 @@ class RobotWebSocketClient(
     }
 
     fun startMissionQueue() {
-        // TODO
+        scope.launch {
+            val json = Json {
+                encodeDefaults = true
+                isLenient = true
+            }
+
+            val request = RobotStateRequest(
+                args = RobotStateArgs(
+                    robotState = 3,
+                    web_session_id = "4nn6sbubuetsmujl3ae96f9140"
+                )
+            )
+
+            val jsonString = json.encodeToString(request)
+            sendMessage(jsonString)
+        }
     }
 
     fun stopMissionQueue() {
-        // TODO
+        scope.launch {
+            val json = Json {
+                encodeDefaults = true
+                isLenient = true
+            }
+
+            val request = RobotStateRequest(
+                args = RobotStateArgs(
+                    robotState = 4,
+                    web_session_id = "4nn6sbubuetsmujl3ae96f9140"
+                )
+            )
+
+            val jsonString = json.encodeToString(request)
+            sendMessage(jsonString)
+        }
     }
 
     fun disconnect() {

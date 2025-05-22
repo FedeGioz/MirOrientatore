@@ -34,7 +34,7 @@ fun App() {
             ConnectedStudentsPage(navController)
         }
 
-        composable(Screens.QuizAnswers.name) {
+        composable(Screens.QuizLauncher.name) {
             QuizPage(navController)
         }
 
