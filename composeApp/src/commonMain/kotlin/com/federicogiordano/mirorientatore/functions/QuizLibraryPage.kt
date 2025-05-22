@@ -63,10 +63,10 @@ fun QuizLibraryPage(navController: NavHostController) {
     )
 
     if (showCreateQuizDialog) {
-        CreateQuizDialog( // Reusing the dialog from QuizPage.kt
+        CreateQuizDialog(
             onDismiss = { showCreateQuizDialog = false },
             onCreateQuiz = { quiz ->
-                quizService.saveQuiz(quiz) // Save to library
+                quizService.saveQuiz(quiz)
                 showCreateQuizDialog = false
             }
         )

@@ -170,14 +170,22 @@ actual class WebSocketServer {
         val messageJson = Json.encodeToString(message)
         val disconnectedIds = mutableListOf<String>()
 
+        println("Broadcasting message. Current student sessions: ${studentSessions.keys.joinToString(", ")}")
+
         studentSessions.forEach { (id, session) ->
             try {
+                println("Attempting to send message to student $id")
                 session.send(Frame.Text(messageJson))
+                println("Successfully sent message to student $id")
             } catch (e: Exception) {
+                println("Failed to send message to student $id: ${e.message}")
                 disconnectedIds.add(id)
             }
         }
 
+        if (disconnectedIds.isNotEmpty()) {
+            println("Students to disconnect after broadcast: ${disconnectedIds.joinToString(", ")}")
+        }
         disconnectedIds.forEach { handleDisconnection(it) }
     }
 }

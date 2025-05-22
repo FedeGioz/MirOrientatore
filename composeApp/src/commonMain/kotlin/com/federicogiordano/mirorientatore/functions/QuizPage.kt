@@ -1,5 +1,6 @@
 package com.federicogiordano.mirorientatore.functions
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -9,6 +10,8 @@ import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.PlayArrow
+import androidx.compose.material.icons.filled.Stop
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -31,7 +34,7 @@ fun QuizPage(navController: NavHostController) {
     val pendingAnswers by quizService.pendingAnswers.collectAsState()
     val studentResults by quizService.studentResults.collectAsState()
     val activeQuiz by quizService.activeQuiz.collectAsState()
-    var showCreateQuiz by remember { mutableStateOf(false) }
+    val availableQuizzes by quizService.availableQuizzes.collectAsState()
     var showResults by remember { mutableStateOf(false) }
     val coroutineScope = rememberCoroutineScope()
 
@@ -54,6 +57,7 @@ fun QuizPage(navController: NavHostController) {
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             Text("Gestione Quiz")
                             if (pendingAnswers.isNotEmpty()) {
+                                Spacer(Modifier.width(8.dp))
                                 Badge { Text(pendingAnswers.size.toString()) }
                             }
                         }
@@ -75,25 +79,21 @@ fun QuizPage(navController: NavHostController) {
                 QuizManagementScreen(
                     activeQuiz = activeQuiz,
                     pendingAnswers = pendingAnswers,
-                    onCreateQuiz = { showCreateQuiz = true },
+                    availableQuizzes = availableQuizzes,
+                    onSendQuiz = { quiz ->
+                        coroutineScope.launch {
+                            quizService.sendQuizToStudents(quiz)
+                        }
+                    },
                     onEvaluateAnswer = { answerId, isCorrect ->
                         quizService.evaluateAnswer(answerId, isCorrect)
+                    },
+                    onStopQuiz = {
+                        quizService.stopActiveQuiz()
                     }
                 )
             }
         }
-    }
-
-    if (showCreateQuiz) {
-        CreateQuizDialog(
-            onDismiss = { showCreateQuiz = false },
-            onCreateQuiz = { quiz ->
-                showCreateQuiz = false
-                coroutineScope.launch {
-                    quizService.sendQuizToStudents(quiz)
-                }
-            }
-        )
     }
 }
 
@@ -101,21 +101,23 @@ fun QuizPage(navController: NavHostController) {
 fun QuizManagementScreen(
     activeQuiz: Quiz?,
     pendingAnswers: List<QuizAnswer>,
-    onCreateQuiz: () -> Unit,
-    onEvaluateAnswer: (String, Boolean) -> Unit
+    availableQuizzes: List<Quiz>,
+    onSendQuiz: (Quiz) -> Unit,
+    onEvaluateAnswer: (String, Boolean) -> Unit,
+    onStopQuiz: () -> Unit
 ) {
     Column(
         modifier = Modifier
             .fillMaxSize()
             .padding(16.dp)
     ) {
-        Card(
-            modifier = Modifier.fillMaxWidth()
-        ) {
-            Column(
-                modifier = Modifier.padding(16.dp)
+        if (activeQuiz != null) {
+            Card(
+                modifier = Modifier.fillMaxWidth()
             ) {
-                if (activeQuiz != null) {
+                Column(
+                    modifier = Modifier.padding(16.dp)
+                ) {
                     Text(
                         "Quiz Attivo: ${activeQuiz.title}",
                         style = MaterialTheme.typography.titleLarge
@@ -124,22 +126,43 @@ fun QuizManagementScreen(
                         "Domande: ${activeQuiz.questions.size}",
                         style = MaterialTheme.typography.bodyMedium
                     )
-                } else {
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Button(
+                        onClick = onStopQuiz,
+                        modifier = Modifier.fillMaxWidth()
                     ) {
-                        Text(
-                            "Nessun quiz attivo",
-                            style = MaterialTheme.typography.titleMedium
+                        Icon(Icons.Filled.Stop, contentDescription = "Termina Quiz")
+                        Spacer(modifier = Modifier.width(4.dp))
+                        Text("Termina Quiz Attivo")
+                    }
+                }
+            }
+        } else {
+            Text(
+                "Avvia Quiz dalla Libreria",
+                style = MaterialTheme.typography.titleMedium,
+                modifier = Modifier.padding(bottom = 8.dp)
+            )
+            if (availableQuizzes.isEmpty()) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .weight(1f)
+                        .padding(vertical = 16.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text("Nessun quiz salvato. Vai alla Libreria Quiz per crearne uno.")
+                }
+            } else {
+                LazyColumn(
+                    modifier = Modifier.weight(1f, fill = false),
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    items(availableQuizzes, key = { it.id }) { quiz ->
+                        AvailableQuizCard(
+                            quiz = quiz,
+                            onSendQuiz = { onSendQuiz(quiz) }
                         )
-                        Spacer(modifier = Modifier.weight(1f))
-                        Button(
-                            onClick = onCreateQuiz
-                        ) {
-                            Icon(Icons.Default.Add, contentDescription = "Crea Quiz")
-                            Spacer(modifier = Modifier.width(4.dp))
-                            Text("Crea Quiz")
-                        }
                     }
                 }
             }
@@ -156,16 +179,23 @@ fun QuizManagementScreen(
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(200.dp),
+                    .weight(1f)
+                    .heightIn(min = 100.dp),
                 contentAlignment = Alignment.Center
             ) {
-                Text("Nessuna risposta in sospeso")
+                if (activeQuiz != null) {
+                    Text("Nessuna risposta in sospeso per il quiz attivo.")
+                } else if (availableQuizzes.isNotEmpty()){
+                    Text("Seleziona un quiz dalla libreria per iniziare.")
+                } else {
+                    Text("Vai alla Libreria Quiz per creare un quiz e avviarlo da lì.")
+                }
             }
         } else {
             LazyColumn(
                 modifier = Modifier.weight(1f)
             ) {
-                items(pendingAnswers) { answer ->
+                items(pendingAnswers, key = { it.id }) { answer ->
                     AnswerCard(
                         answer = answer,
                         onAccept = { onEvaluateAnswer(answer.id, true) },
@@ -176,6 +206,46 @@ fun QuizManagementScreen(
         }
     }
 }
+
+@Composable
+fun AvailableQuizCard(
+    quiz: Quiz,
+    onSendQuiz: () -> Unit
+) {
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable(onClick = onSendQuiz),
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceBetween
+        ) {
+            Column(modifier = Modifier.weight(1f)) {
+                Text(text = quiz.title, style = MaterialTheme.typography.titleMedium)
+                Text(
+                    text = "Domande: ${quiz.questions.size}",
+                    style = MaterialTheme.typography.bodySmall
+                )
+            }
+            IconButton(
+                onClick = onSendQuiz,
+                modifier = Modifier.size(48.dp)
+            ) {
+                Icon(
+                    Icons.Filled.PlayArrow,
+                    contentDescription = "Avvia Quiz",
+                    tint = MaterialTheme.colorScheme.primary
+                )
+            }
+        }
+    }
+}
+
 
 @Composable
 fun AnswerCard(
@@ -289,9 +359,15 @@ fun QuizResultsScreen(
             modifier = Modifier.padding(bottom = 8.dp)
         )
 
-        LazyColumn {
-            items(results) { result ->
-                StudentResultCard(result)
+        if (results.isEmpty()){
+            Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center){
+                Text("Nessun risultato disponibile.")
+            }
+        } else {
+            LazyColumn {
+                items(results, key = { it.studentId + it.quizId }) { result ->
+                    StudentResultCard(result)
+                }
             }
         }
     }
@@ -328,15 +404,15 @@ fun StudentResultCard(result: StudentQuizResult) {
 
             LinearProgressIndicator(
                 progress = if (result.totalPoints > 0)
-                    result.score.toFloat() / result.totalPoints
+                    result.score.toFloat() / result.totalPoints.toFloat()
                 else 0f,
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(vertical = 8.dp)
             )
-
+            val percentage = if (result.totalPoints > 0) (result.score.toFloat() / result.totalPoints.toFloat()) * 100 else 0f
             Text(
-                text = "Punteggio: ${((result.score.toFloat() / result.totalPoints) * 100).roundToInt()}%",
+                text = "Punteggio: ${percentage.roundToInt()}%",
                 style = MaterialTheme.typography.bodyMedium
             )
         }
@@ -382,7 +458,9 @@ fun CreateQuizDialog(
             }
 
             if (question.options.size < 2) {
-                questionTextErrors[index] = (questionTextErrors[index]?.plus(" ") ?: "") + "Deve avere almeno 2 opzioni."
+                val currentError = questionTextErrors[index]
+                val newError = "Deve avere almeno 2 opzioni."
+                questionTextErrors[index] = if (currentError != null) "$currentError $newError" else newError
                 isValid = false
             }
 
@@ -391,14 +469,12 @@ fun CreateQuizDialog(
             while (currentOptionErrors.size > question.options.size) currentOptionErrors.removeLast()
             optionTextErrors[index] = currentOptionErrors
 
-            var questionHasOptionError = false
             question.options.forEachIndexed { optIndex, option ->
                 if (option.isBlank()) {
                     val mutableCurrentOptionErrors = optionTextErrors[index].toMutableList()
                     mutableCurrentOptionErrors[optIndex] = "L'opzione non può essere vuota"
                     optionTextErrors[index] = mutableCurrentOptionErrors
                     isValid = false
-                    questionHasOptionError = true
                 } else {
                     val mutableCurrentOptionErrors = optionTextErrors[index].toMutableList()
                     if (optIndex < mutableCurrentOptionErrors.size) {
@@ -429,7 +505,8 @@ fun CreateQuizDialog(
                     onValueChange = { title = it; titleError = null },
                     label = { Text("Titolo Quiz") },
                     modifier = Modifier.fillMaxWidth(),
-                    isError = titleError != null
+                    isError = titleError != null,
+                    singleLine = true
                 )
                 if (titleError != null) {
                     Text(titleError!!, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall)
@@ -494,7 +571,8 @@ fun CreateQuizDialog(
                                         modifier = Modifier.weight(1f),
                                         isError = index < optionTextErrors.size &&
                                                 optionIndex < optionTextErrors[index].size &&
-                                                optionTextErrors[index][optionIndex] != null
+                                                optionTextErrors[index][optionIndex] != null,
+                                        singleLine = true
                                     )
                                     if (question.options.size > 2) {
                                         IconButton(onClick = {
@@ -507,9 +585,10 @@ fun CreateQuizDialog(
                                             } else if (newCorrectIndex > optionIndex) {
                                                 newCorrectIndex--
                                             }
-                                            if (newCorrectIndex >= currentOptions.size && currentOptions.isNotEmpty()) {
-                                                newCorrectIndex = currentOptions.size -1
-                                            } else if (currentOptions.isEmpty()) {
+
+                                            if (currentOptions.isNotEmpty()) {
+                                                newCorrectIndex = newCorrectIndex.coerceIn(0, currentOptions.size - 1)
+                                            } else {
                                                 newCorrectIndex = -1
                                             }
 
@@ -591,14 +670,18 @@ fun CreateQuizDialog(
                 onClick = {
                     if (validateQuiz()) {
                         val finalQuestions = questions.map { q ->
-                            val validCorrectIndex = if (q.options.isEmpty()) -1 else q.correctOptionIndex.coerceIn(0, q.options.size - 1)
+
+                            val validCorrectIndex = if (q.options.isEmpty()) -1
+                            else q.correctOptionIndex.coerceIn(0, q.options.size - 1)
                             q.copy(correctOptionIndex = validCorrectIndex)
                         }
                         val quiz = Quiz(
-                            title = title,
-                            questions = finalQuestions.toList()
+                            title = title.trim(),
+                            questions = finalQuestions.filter { it.text.isNotBlank() && it.options.size >= 2 && it.options.all { opt -> opt.isNotBlank() } }
                         )
-                        onCreateQuiz(quiz)
+                        if (quiz.questions.isNotEmpty()){
+                            onCreateQuiz(quiz)
+                        }
                     }
                 }
             ) {
@@ -615,10 +698,15 @@ fun CreateQuizDialog(
 
 private fun formatTimestamp(timestamp: Long): String {
     val currentTime = Clock.System.now().toEpochMilliseconds()
-    val seconds = (currentTime - timestamp) / 1000
+    val diffMillis = currentTime - timestamp
+    val seconds = diffMillis / 1000
+    val minutes = seconds / 60
+    val hours = minutes / 60
+
     return when {
         seconds < 60 -> "Pochi secondi fa"
-        seconds < 3600 -> "${seconds / 60}m fa"
-        else -> "${seconds / 3600}h fa"
+        minutes < 60 -> "${minutes}m fa"
+        hours < 24 -> "${hours}h fa"
+        else -> "${hours / 24}g fa"
     }
 }

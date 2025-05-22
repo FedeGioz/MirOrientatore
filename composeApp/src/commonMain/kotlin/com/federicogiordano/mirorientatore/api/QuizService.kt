@@ -77,13 +77,13 @@ class QuizService private constructor() {
         resetActiveSessionData()
         _activeQuiz.value = quiz
         val webSocketServer = WebSocketServerManager.getInstance()
-        webSocketServer.broadcastMessage(
-            WebSocketMessage(
-                type = "QUIZ",
-                content = Json.encodeToString(quiz),
-                sender = "professor"
-            )
+        val message = WebSocketMessage(
+            type = "QUIZ",
+            content = Json.encodeToString(quiz),
+            sender = "professor"
         )
+        println("Sending WebSocket message: $message")
+        webSocketServer.broadcastMessage(message)
     }
 
     fun addAnswer(answer: QuizAnswer) {
@@ -103,13 +103,15 @@ class QuizService private constructor() {
 
         serviceScope.launch {
             val webSocketServer = WebSocketServerManager.getInstance()
+            val message = WebSocketMessage(
+                type = "ANSWER_EVALUATED",
+                content = Json.encodeToString(evaluatedAnswer),
+                sender = "professor"
+            )
+            println("Sending WebSocket message to student ${evaluatedAnswer.studentId}: $message") // Added log
             webSocketServer.sendToStudent(
                 evaluatedAnswer.studentId,
-                WebSocketMessage(
-                    type = "ANSWER_EVALUATED",
-                    content = Json.encodeToString(evaluatedAnswer),
-                    sender = "professor"
-                )
+                message
             )
         }
     }
