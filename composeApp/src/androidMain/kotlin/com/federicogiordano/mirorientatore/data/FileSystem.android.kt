@@ -2,9 +2,9 @@ package com.federicogiordano.mirorientatore.data
 
 import android.annotation.SuppressLint
 import android.content.Context
+import android.net.Uri
 import java.io.File
 import java.io.IOException
-
 
 @SuppressLint("StaticFieldLeak")
 actual object FileSystem {
@@ -23,7 +23,7 @@ actual object FileSystem {
 
     private fun getFilesDir(): File? {
         if (appContext == null) {
-            println("Error: FileSystem not initialized. Call initialize(context) first.")
+            println("Error: FileSystem (for internal files) not initialized. Call initialize(context) first.")
             return null
         }
         return appContext?.filesDir
@@ -55,6 +55,27 @@ actual object FileSystem {
             true
         } catch (e: IOException) {
             println("Error writing file $fileName: ${e.message}")
+            e.printStackTrace()
+            false
+        }
+    }
+
+    fun readTextFromUri(context: Context, uri: Uri): String? {
+        return try {
+            context.contentResolver.openInputStream(uri)?.bufferedReader()?.use { it.readText() }
+        } catch (e: Exception) {
+            println("Error reading from URI $uri: ${e.message}")
+            e.printStackTrace()
+            null
+        }
+    }
+
+    fun writeTextToUri(context: Context, uri: Uri, content: String): Boolean {
+        return try {
+            context.contentResolver.openOutputStream(uri)?.bufferedWriter()?.use { it.write(content) }
+            true
+        } catch (e: Exception) {
+            println("Error writing to URI $uri: ${e.message}")
             e.printStackTrace()
             false
         }

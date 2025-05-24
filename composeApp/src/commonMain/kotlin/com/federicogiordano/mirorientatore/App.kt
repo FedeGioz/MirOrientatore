@@ -1,26 +1,27 @@
 package com.federicogiordano.mirorientatore
 
-import androidx.compose.runtime.Composable
+import androidx.compose.runtime.*
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
+import com.federicogiordano.mirorientatore.api.QuizService
 import com.federicogiordano.mirorientatore.api.WebSocketServerManager
-import com.federicogiordano.mirorientatore.functions.ConnectedStudentsPage
-import com.federicogiordano.mirorientatore.functions.DiagnosticsScreen
-import com.federicogiordano.mirorientatore.functions.MapsList
-import com.federicogiordano.mirorientatore.functions.MissionQueue
-import com.federicogiordano.mirorientatore.functions.MissionsList
-import com.federicogiordano.mirorientatore.functions.QuizLibraryPage
-import com.federicogiordano.mirorientatore.functions.QuizPage
-import com.federicogiordano.mirorientatore.functions.SoundsList
+import com.federicogiordano.mirorientatore.functions.*
+import com.federicogiordano.mirorientatore.functions.settings.SettingsPage
 
 @Composable
-fun App() {
+fun App(
+    triggerImport: () -> Unit,
+    triggerExport: () -> Unit
+) {
     val navController = rememberNavController()
+    val quizService = remember { QuizService.getInstance() }
 
-    WebSocketServerManager.getInstance().start()
+    LaunchedEffect(Unit) {
+        WebSocketServerManager.getInstance().start()
+    }
 
     NavHost(
         navController = navController,
@@ -39,7 +40,22 @@ fun App() {
         }
 
         composable(Screens.QuizLibrary.name) {
-            QuizLibraryPage(navController)
+            val availableQuizzes by quizService.availableQuizzes.collectAsState()
+            QuizLibraryPage(
+                navController = navController,
+                availableQuizzes = availableQuizzes,
+                quizService = quizService,
+                onImportQuizzes = triggerImport,
+                onExportQuizzes = triggerExport
+            )
+        }
+
+        composable(Screens.Settings.name) {
+            SettingsPage(
+                onNavigateTo = { route ->
+                    navController.navigate(route)
+                }
+            )
         }
 
         composable(
@@ -54,7 +70,6 @@ fun App() {
                 "mission_queue" -> MissionQueue(navController)
                 "sounds" -> SoundsList(navController)
                 "diagnostics" -> DiagnosticsScreen(navController)
-//                else -> FunctionSubScreen("Unknown Function", navController)
             }
         }
     }

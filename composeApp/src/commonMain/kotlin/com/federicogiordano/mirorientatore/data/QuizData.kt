@@ -22,7 +22,7 @@ data class QuizQuestion(
     val id: String = generateRandomId(),
     val text: String,
     val options: List<String>,
-    val correctOptionIndex: Int
+    val correctOptionIndex: Int = -1
 )
 
 @Serializable
@@ -40,13 +40,6 @@ data class StudentQuizResult(
     val score: Int,
     val totalPoints: Int,
     val answers: List<QuizAnswer>
-)
-
-@Serializable
-data class QuizSummary(
-    val quiz: Quiz,
-    val studentResults: List<StudentQuizResult>,
-    val averageScore: Float
 )
 
 // X ovviare alla multipiattaforma (non compatibile con librerie Java)

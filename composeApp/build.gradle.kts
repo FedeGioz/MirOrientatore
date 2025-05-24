@@ -60,6 +60,7 @@ kotlin {
             implementation(libs.ktor.server.netty)
             implementation(libs.ktor.server.websockets)
             implementation(libs.kotlinx.datetime)
+            implementation(libs.uuid)
         }
     }
 }

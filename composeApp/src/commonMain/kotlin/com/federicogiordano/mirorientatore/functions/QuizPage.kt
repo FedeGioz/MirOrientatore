@@ -6,7 +6,6 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Delete
@@ -14,25 +13,27 @@ import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Stop
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.toMutableStateList
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.window.DialogProperties
 import androidx.navigation.NavHostController
 import com.federicogiordano.mirorientatore.Screens
 import com.federicogiordano.mirorientatore.api.QuizService
 import com.federicogiordano.mirorientatore.data.*
 import com.federicogiordano.mirorientatore.ui.AppScaffold
-import kotlin.math.roundToInt
-import androidx.compose.runtime.rememberCoroutineScope
 import kotlinx.coroutines.launch
 import kotlinx.datetime.Clock
+
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 
 @Composable
 fun QuizPage(navController: NavHostController) {
     val quizService = remember { QuizService.getInstance() }
     val pendingAnswers by quizService.pendingAnswers.collectAsState()
-    val studentResults by quizService.studentResults.collectAsState()
+    val studentResults: Map<String, StudentQuizResult> by quizService.studentResults.collectAsState()
     val activeQuiz by quizService.activeQuiz.collectAsState()
     val availableQuizzes by quizService.availableQuizzes.collectAsState()
     var showResults by remember { mutableStateOf(false) }
@@ -44,54 +45,64 @@ fun QuizPage(navController: NavHostController) {
     ) { innerPadding ->
         Column(
             modifier = Modifier
-                .fillMaxSize()
                 .padding(innerPadding)
+                .fillMaxSize()
+                .padding(16.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            TabRow(
-                selectedTabIndex = if (showResults) 1 else 0
-            ) {
-                Tab(
-                    selected = !showResults,
-                    onClick = { showResults = false },
-                    text = {
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            Text("Gestione Quiz")
-                            if (pendingAnswers.isNotEmpty()) {
-                                Spacer(Modifier.width(8.dp))
-                                Badge { Text(pendingAnswers.size.toString()) }
-                            }
-                        }
+            QuizManagementScreen(
+                activeQuiz = activeQuiz,
+                availableQuizzes = availableQuizzes,
+                onSendQuiz = { quiz ->
+                    coroutineScope.launch {
+                        quizService.sendQuizToStudents(quiz)
+                        showResults = false
                     }
-                )
-                Tab(
-                    selected = showResults,
-                    onClick = { showResults = true },
-                    text = { Text("Risultati") }
-                )
-            }
-
-            if (showResults) {
-                QuizResultsScreen(
-                    results = studentResults.values.toList(),
-                    averageScore = quizService.getAverageScore()
-                )
-            } else {
-                QuizManagementScreen(
-                    activeQuiz = activeQuiz,
-                    pendingAnswers = pendingAnswers,
-                    availableQuizzes = availableQuizzes,
-                    onSendQuiz = { quiz ->
-                        coroutineScope.launch {
-                            quizService.sendQuizToStudents(quiz)
-                        }
-                    },
-                    onEvaluateAnswer = { answerId, isCorrect ->
-                        quizService.evaluateAnswer(answerId, isCorrect)
-                    },
-                    onStopQuiz = {
+                },
+                onStopQuiz = {
+                    coroutineScope.launch {
                         quizService.stopActiveQuiz()
+                        showResults = true
                     }
-                )
+                }
+            )
+
+            val currentActiveQuiz = activeQuiz
+            if (currentActiveQuiz != null) {
+                val processedAnswersForCurrentQuiz = studentResults.values
+                    .filter { it.quizId == currentActiveQuiz.id }
+                    .flatMap { it.answers }
+                    .sortedByDescending { it.timestamp }
+
+                if (pendingAnswers.isNotEmpty()) {
+                    Text(
+                        "Risposte in arrivo (${pendingAnswers.size})...",
+                        style = MaterialTheme.typography.headlineSmall,
+                        modifier = Modifier.padding(vertical = 16.dp)
+                    )
+                    LazyColumn(modifier = Modifier.fillMaxWidth()) {
+                        items(pendingAnswers, key = { "pending-${it.id}" }) { answer ->
+                            AnswerCard(answer)
+                        }
+                    }
+                } else if (processedAnswersForCurrentQuiz.isNotEmpty()) {
+                    Text(
+                        "Risposte ricevute (${processedAnswersForCurrentQuiz.size}):",
+                        style = MaterialTheme.typography.headlineSmall,
+                        modifier = Modifier.padding(vertical = 16.dp)
+                    )
+                    LazyColumn(modifier = Modifier.fillMaxWidth()) {
+                        items(processedAnswersForCurrentQuiz, key = { "processed-${it.id}" }) { answer ->
+                            AnswerCard(answer)
+                        }
+                    }
+                } else {
+                    Text(
+                        "Quiz attivo: ${currentActiveQuiz.title}. In attesa di risposte.",
+                        style = MaterialTheme.typography.bodyLarge,
+                        modifier = Modifier.padding(16.dp)
+                    )
+                }
             }
         }
     }
@@ -100,108 +111,44 @@ fun QuizPage(navController: NavHostController) {
 @Composable
 fun QuizManagementScreen(
     activeQuiz: Quiz?,
-    pendingAnswers: List<QuizAnswer>,
     availableQuizzes: List<Quiz>,
     onSendQuiz: (Quiz) -> Unit,
-    onEvaluateAnswer: (String, Boolean) -> Unit,
     onStopQuiz: () -> Unit
 ) {
     Column(
         modifier = Modifier
-            .fillMaxSize()
-            .padding(16.dp)
+            .fillMaxWidth()
+            .padding(bottom = 16.dp),
+        horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        if (activeQuiz != null) {
-            Card(
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Column(
-                    modifier = Modifier.padding(16.dp)
-                ) {
-                    Text(
-                        "Quiz Attivo: ${activeQuiz.title}",
-                        style = MaterialTheme.typography.titleLarge
-                    )
-                    Text(
-                        "Domande: ${activeQuiz.questions.size}",
-                        style = MaterialTheme.typography.bodyMedium
-                    )
-                    Spacer(modifier = Modifier.height(8.dp))
-                    Button(
-                        onClick = onStopQuiz,
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
-                        Icon(Icons.Filled.Stop, contentDescription = "Termina Quiz")
-                        Spacer(modifier = Modifier.width(4.dp))
-                        Text("Termina Quiz Attivo")
-                    }
-                }
-            }
-        } else {
-            Text(
-                "Avvia Quiz dalla Libreria",
-                style = MaterialTheme.typography.titleMedium,
-                modifier = Modifier.padding(bottom = 8.dp)
-            )
+        if (activeQuiz == null) {
+            Text("Seleziona un Quiz da inviare:", style = MaterialTheme.typography.headlineSmall)
+            Spacer(modifier = Modifier.height(8.dp))
             if (availableQuizzes.isEmpty()) {
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .weight(1f)
-                        .padding(vertical = 16.dp),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Text("Nessun quiz salvato. Vai alla Libreria Quiz per crearne uno.")
-                }
+                Text("Nessun quiz disponibile. Vai alla libreria per crearne uno.")
             } else {
                 LazyColumn(
-                    modifier = Modifier.weight(1f, fill = false),
-                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                    modifier = Modifier
+                        .fillMaxWidth()
                 ) {
-                    items(availableQuizzes, key = { it.id }) { quiz ->
-                        AvailableQuizCard(
-                            quiz = quiz,
-                            onSendQuiz = { onSendQuiz(quiz) }
-                        )
+                    items(availableQuizzes) { quiz ->
+                        AvailableQuizCard(quiz = quiz, onSendQuiz = { onSendQuiz(quiz) })
                     }
                 }
             }
-        }
-
-        Spacer(modifier = Modifier.height(16.dp))
-
-        Text(
-            "Risposte in Sospeso (${pendingAnswers.size})",
-            style = MaterialTheme.typography.titleMedium
-        )
-
-        if (pendingAnswers.isEmpty()) {
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .weight(1f)
-                    .heightIn(min = 100.dp),
-                contentAlignment = Alignment.Center
-            ) {
-                if (activeQuiz != null) {
-                    Text("Nessuna risposta in sospeso per il quiz attivo.")
-                } else if (availableQuizzes.isNotEmpty()){
-                    Text("Seleziona un quiz dalla libreria per iniziare.")
-                } else {
-                    Text("Vai alla Libreria Quiz per creare un quiz e avviarlo da lì.")
-                }
-            }
         } else {
-            LazyColumn(
-                modifier = Modifier.weight(1f)
+            val quizService = remember { QuizService.getInstance() }
+
+            Text("Quiz Attivo: ${activeQuiz.title}", style = MaterialTheme.typography.headlineSmall)
+            Spacer(modifier = Modifier.height(16.dp))
+            Button(
+                onClick = onStopQuiz,
+                enabled = activeQuiz != null,
+                colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error)
             ) {
-                items(pendingAnswers, key = { it.id }) { answer ->
-                    AnswerCard(
-                        answer = answer,
-                        onAccept = { onEvaluateAnswer(answer.id, true) },
-                        onDecline = { onEvaluateAnswer(answer.id, false) }
-                    )
-                }
+                Icon(imageVector = Icons.Filled.Stop, contentDescription = "Ferma Quiz Attivo")
+                Spacer(modifier = Modifier.width(8.dp))
+                Text("Ferma Quiz")
             }
         }
     }
@@ -215,33 +162,22 @@ fun AvailableQuizCard(
     Card(
         modifier = Modifier
             .fillMaxWidth()
+            .padding(vertical = 4.dp)
             .clickable(onClick = onSendQuiz),
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
     ) {
         Row(
             modifier = Modifier
-                .fillMaxWidth()
-                .padding(16.dp),
+                .padding(16.dp)
+                .fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
             Column(modifier = Modifier.weight(1f)) {
-                Text(text = quiz.title, style = MaterialTheme.typography.titleMedium)
-                Text(
-                    text = "Domande: ${quiz.questions.size}",
-                    style = MaterialTheme.typography.bodySmall
-                )
+                Text(quiz.title, style = MaterialTheme.typography.titleMedium)
+                Text("Domande: ${quiz.questions.size}", style = MaterialTheme.typography.bodySmall)
             }
-            IconButton(
-                onClick = onSendQuiz,
-                modifier = Modifier.size(48.dp)
-            ) {
-                Icon(
-                    Icons.Filled.PlayArrow,
-                    contentDescription = "Avvia Quiz",
-                    tint = MaterialTheme.colorScheme.primary
-                )
-            }
+            Icon(Icons.Filled.PlayArrow, contentDescription = "Invia Quiz")
         }
     }
 }
@@ -249,125 +185,38 @@ fun AvailableQuizCard(
 
 @Composable
 fun AnswerCard(
-    answer: QuizAnswer,
-    onAccept: () -> Unit,
-    onDecline: () -> Unit
+    answer: QuizAnswer
 ) {
     Card(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(vertical = 8.dp)
+            .padding(vertical = 4.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = if (answer.isCorrect) MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.3f)
+            else MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.3f)
+        )
     ) {
-        Column(
-            modifier = Modifier.padding(16.dp)
-        ) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween
-            ) {
-                Text(
-                    text = answer.studentName,
-                    style = MaterialTheme.typography.titleMedium
-                )
-                Text(
-                    text = formatTimestamp(answer.timestamp),
-                    style = MaterialTheme.typography.bodySmall
-                )
-            }
-
-            Spacer(modifier = Modifier.height(8.dp))
-
+        Column(modifier = Modifier.padding(16.dp)) {
             Text(
-                text = "Domanda: ${answer.question}",
-                style = MaterialTheme.typography.bodyMedium
+                "${answer.studentName} (${formatTimestamp(answer.timestamp)})",
+                style = MaterialTheme.typography.titleSmall
             )
-
-            Text(
-                text = "Risposta: ${answer.answer}",
-                style = MaterialTheme.typography.bodyLarge,
-                modifier = Modifier.padding(vertical = 8.dp)
-            )
-
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.End
-            ) {
-                Button(
-                    onClick = onDecline,
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = MaterialTheme.colorScheme.error
-                    ),
-                    modifier = Modifier.padding(end = 8.dp)
-                ) {
-                    Icon(Icons.Default.Close, contentDescription = "Non corretto")
-                    Spacer(modifier = Modifier.width(4.dp))
-                    Text("Non corretto")
-                }
-
-                Button(
-                    onClick = onAccept,
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = MaterialTheme.colorScheme.primary
-                    )
-                ) {
-                    Icon(Icons.Default.Check, contentDescription = "Corretto")
-                    Spacer(modifier = Modifier.width(4.dp))
-                    Text("Corretto")
-                }
+            Spacer(modifier = Modifier.height(4.dp))
+            if (answer.question.isNotBlank()) {
+                Text("Domanda: ${answer.question}", style = MaterialTheme.typography.bodyMedium)
             }
-        }
-    }
-}
-
-@Composable
-fun QuizResultsScreen(
-    results: List<StudentQuizResult>,
-    averageScore: Float
-) {
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(16.dp)
-    ) {
-        Card(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(bottom = 16.dp)
-        ) {
-            Column(
-                modifier = Modifier.padding(16.dp)
-            ) {
+            Text("Risposta: ${answer.answer}", style = MaterialTheme.typography.bodyMedium)
+            Spacer(modifier = Modifier.height(4.dp))
+            Row(verticalAlignment = Alignment.CenterVertically) {
                 Text(
-                    "Statistiche Quiz",
-                    style = MaterialTheme.typography.titleLarge
-                )
-                Spacer(modifier = Modifier.height(8.dp))
-                Text(
-                    "Punteggio Medio: ${averageScore.roundToInt()}%",
-                    style = MaterialTheme.typography.bodyLarge
-                )
-                Text(
-                    "Studenti Totali: ${results.size}",
+                    "Corretta: ",
                     style = MaterialTheme.typography.bodyMedium
                 )
-            }
-        }
-
-        Text(
-            "Risultati Studenti",
-            style = MaterialTheme.typography.titleMedium,
-            modifier = Modifier.padding(bottom = 8.dp)
-        )
-
-        if (results.isEmpty()){
-            Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center){
-                Text("Nessun risultato disponibile.")
-            }
-        } else {
-            LazyColumn {
-                items(results, key = { it.studentId + it.quizId }) { result ->
-                    StudentResultCard(result)
-                }
+                Icon(
+                    imageVector = if (answer.isCorrect) Icons.Filled.Check else Icons.Filled.Close,
+                    contentDescription = if (answer.isCorrect) "Corretta" else "Sbagliata",
+                    tint = if (answer.isCorrect) MaterialTheme.colorScheme.secondary else MaterialTheme.colorScheme.error
+                )
             }
         }
     }
@@ -378,42 +227,13 @@ fun StudentResultCard(result: StudentQuizResult) {
     Card(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(vertical = 8.dp)
+            .padding(vertical = 4.dp)
     ) {
-        Column(
-            modifier = Modifier.padding(16.dp)
-        ) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Text(
-                    text = result.studentName,
-                    style = MaterialTheme.typography.titleMedium,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
-                    modifier = Modifier.weight(1f)
-                )
-
-                Text(
-                    text = "${result.score}/${result.totalPoints}",
-                    style = MaterialTheme.typography.titleLarge
-                )
-            }
-
-            LinearProgressIndicator(
-                progress = if (result.totalPoints > 0)
-                    result.score.toFloat() / result.totalPoints.toFloat()
-                else 0f,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(vertical = 8.dp)
-            )
-            val percentage = if (result.totalPoints > 0) (result.score.toFloat() / result.totalPoints.toFloat()) * 100 else 0f
+        Column(modifier = Modifier.padding(16.dp)) {
+            Text(result.studentName, style = MaterialTheme.typography.titleMedium)
             Text(
-                text = "Punteggio: ${percentage.roundToInt()}%",
-                style = MaterialTheme.typography.bodyMedium
+                "Punteggio: ${result.score}/${result.totalPoints}",
+                style = MaterialTheme.typography.bodyLarge
             )
         }
     }
@@ -421,280 +241,238 @@ fun StudentResultCard(result: StudentQuizResult) {
 
 @Composable
 fun CreateQuizDialog(
+    existingQuiz: Quiz? = null,
     onDismiss: () -> Unit,
     onCreateQuiz: (Quiz) -> Unit
 ) {
-    var title by remember { mutableStateOf("") }
+    var title by remember { mutableStateOf(existingQuiz?.title ?: "") }
     val questions = remember {
-        mutableStateListOf(
-            QuizQuestion(
-                text = "",
-                options = List(2) { "" },
-                correctOptionIndex = 0
-            )
-        )
+        existingQuiz?.questions?.map { it.copy(options = it.options.toMutableList()) }?.toMutableStateList()
+            ?: mutableStateListOf(QuizQuestion(id = uuid4(), text = "", options = mutableStateListOf("", ""), correctOptionIndex = -1))
     }
     var titleError by remember { mutableStateOf<String?>(null) }
-    val questionTextErrors = remember { mutableStateListOf<String?>() }
-    val optionTextErrors = remember { mutableStateListOf<List<String?>>() }
+
+    val questionTextErrors = remember {
+        val initialErrors: List<String?> = existingQuiz?.questions?.map { null } ?: List(questions.size) { null }
+        initialErrors.toMutableStateList()
+    }
+    val optionTextErrors = remember {
+        val initialOptionErrors: List<List<String?>> = existingQuiz?.questions?.map { question ->
+            List(question.options.size) { null }
+        } ?: List(questions.size) { List(questions.getOrNull(it)?.options?.size ?: 2) { null } }
+        initialOptionErrors.toMutableStateList()
+    }
 
 
     fun validateQuiz(): Boolean {
-        var isValid = true
+        var currentIsValid = true
         titleError = if (title.isBlank()) "Il titolo non può essere vuoto" else null
-        if (titleError != null) isValid = false
+        if (titleError != null) currentIsValid = false
 
         while (questionTextErrors.size < questions.size) questionTextErrors.add(null)
         while (questionTextErrors.size > questions.size) questionTextErrors.removeLast()
-        while (optionTextErrors.size < questions.size) optionTextErrors.add(emptyList())
+
+        while (optionTextErrors.size < questions.size) {
+            optionTextErrors.add(List(questions.getOrNull(optionTextErrors.size)?.options?.size ?: 2) { null })
+        }
         while (optionTextErrors.size > questions.size) optionTextErrors.removeLast()
 
-        questions.forEachIndexed { index, question ->
-            if (question.text.isBlank()) {
-                questionTextErrors[index] = "La domanda non può essere vuota"
-                isValid = false
-            } else {
-                questionTextErrors[index] = null
+        questions.forEachIndexed { qIndex, question ->
+            optionTextErrors[qIndex] = optionTextErrors[qIndex].toMutableList().apply {
+                while (size < question.options.size) add(null)
+                while (size > question.options.size) removeLast()
             }
 
-            if (question.options.size < 2) {
-                val currentError = questionTextErrors[index]
-                val newError = "Deve avere almeno 2 opzioni."
-                questionTextErrors[index] = if (currentError != null) "$currentError $newError" else newError
-                isValid = false
-            }
+            var questionSpecificErrorAccumulator = ""
 
-            val currentOptionErrors = optionTextErrors[index].toMutableList()
-            while (currentOptionErrors.size < question.options.size) currentOptionErrors.add(null)
-            while (currentOptionErrors.size > question.options.size) currentOptionErrors.removeLast()
-            optionTextErrors[index] = currentOptionErrors
+            val qError = if (question.text.isBlank()) "La domanda non può essere vuota" else null
+            questionTextErrors[qIndex] = qError
+            if (qError != null) currentIsValid = false
 
             question.options.forEachIndexed { optIndex, option ->
-                if (option.isBlank()) {
-                    val mutableCurrentOptionErrors = optionTextErrors[index].toMutableList()
-                    mutableCurrentOptionErrors[optIndex] = "L'opzione non può essere vuota"
-                    optionTextErrors[index] = mutableCurrentOptionErrors
-                    isValid = false
+                val oError = if (option.isBlank()) "L'opzione non può essere vuota" else null
+                if (optIndex < optionTextErrors[qIndex].size) {
+                    (optionTextErrors[qIndex] as MutableList<String?>)[optIndex] = oError
+                }
+                if (oError != null) currentIsValid = false
+            }
+
+            if (question.correctOptionIndex < 0 || question.correctOptionIndex >= question.options.size) {
+                questionSpecificErrorAccumulator += " Devi selezionare una risposta corretta."
+            } else if (question.options.getOrNull(question.correctOptionIndex)?.isBlank() == true) {
+                questionSpecificErrorAccumulator += " La risposta corretta selezionata non può essere vuota."
+            }
+
+            if (questionSpecificErrorAccumulator.isNotEmpty()) {
+                currentIsValid = false
+                val existingError = questionTextErrors.getOrNull(qIndex)
+                questionTextErrors[qIndex] = if (existingError.isNullOrBlank()) {
+                    questionSpecificErrorAccumulator.trim()
                 } else {
-                    val mutableCurrentOptionErrors = optionTextErrors[index].toMutableList()
-                    if (optIndex < mutableCurrentOptionErrors.size) {
-                        mutableCurrentOptionErrors[optIndex] = null
-                        optionTextErrors[index] = mutableCurrentOptionErrors
-                    }
+                    "$existingError $questionSpecificErrorAccumulator".trim()
                 }
             }
-
-            if (question.options.isNotEmpty() && (question.correctOptionIndex < 0 || question.correctOptionIndex >= question.options.size)) {
-                val currentQError = questionTextErrors[index]
-                val newError = "Seleziona una risposta corretta valida."
-                questionTextErrors[index] = if (currentQError != null) "$currentQError $newError" else newError
-                isValid = false
-            }
         }
-        return isValid
+        return currentIsValid
     }
 
-
     AlertDialog(
-        onDismissRequest = onDismiss,
-        title = { Text("Crea Nuovo Quiz") },
+        onDismissRequest = { /* Deliberately empty, use dismissButton */ },
+        properties = DialogProperties(usePlatformDefaultWidth = false),
+        modifier = Modifier.fillMaxWidth(0.95f).fillMaxHeight(0.9f),
+        title = { Text(if (existingQuiz == null) "Crea Nuovo Quiz" else "Modifica Quiz") },
         text = {
-            Column(modifier = Modifier.heightIn(max = 600.dp)) {
+            Column(modifier = Modifier.fillMaxSize()) {
                 OutlinedTextField(
                     value = title,
                     onValueChange = { title = it; titleError = null },
-                    label = { Text("Titolo Quiz") },
-                    modifier = Modifier.fillMaxWidth(),
+                    label = { Text("Titolo del Quiz") },
                     isError = titleError != null,
-                    singleLine = true
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth()
                 )
                 if (titleError != null) {
                     Text(titleError!!, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall)
                 }
-
                 Spacer(modifier = Modifier.height(16.dp))
-
                 Text("Domande:", style = MaterialTheme.typography.titleMedium)
-
                 LazyColumn(modifier = Modifier.weight(1f)) {
-                    itemsIndexed(questions, key = { _, question -> question.id }) { index, question ->
-                        Column(modifier = Modifier.padding(vertical = 8.dp)) {
-                            Row(verticalAlignment = Alignment.CenterVertically) {
-                                OutlinedTextField(
-                                    value = question.text,
-                                    onValueChange = { newText ->
-                                        questions[index] = question.copy(text = newText)
-                                        if (index < questionTextErrors.size) questionTextErrors[index] = null
-                                    },
-                                    label = { Text("Domanda ${index + 1}") },
-                                    modifier = Modifier.weight(1f),
-                                    isError = index < questionTextErrors.size && questionTextErrors[index] != null
-                                )
-                                if (questions.size > 1) {
-                                    IconButton(onClick = {
-                                        questions.removeAt(index)
-                                        if (index < questionTextErrors.size) questionTextErrors.removeAt(index)
-                                        if (index < optionTextErrors.size) optionTextErrors.removeAt(index)
-                                    }) {
-                                        Icon(Icons.Default.Delete, contentDescription = "Rimuovi domanda")
-                                    }
-                                }
-                            }
-                            if (index < questionTextErrors.size && questionTextErrors[index] != null) {
-                                Text(questionTextErrors[index]!!, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall)
-                            }
-
-                            Spacer(modifier = Modifier.height(8.dp))
-                            Text("Opzioni e Risposta Corretta:", style = MaterialTheme.typography.bodyMedium)
-                            question.options.forEachIndexed { optionIndex, optionText ->
-                                Row(
-                                    verticalAlignment = Alignment.CenterVertically,
-                                    modifier = Modifier.fillMaxWidth()
-                                ) {
-                                    RadioButton(
-                                        selected = question.correctOptionIndex == optionIndex,
-                                        onClick = { questions[index] = question.copy(correctOptionIndex = optionIndex) }
-                                    )
-                                    OutlinedTextField(
-                                        value = optionText,
-                                        onValueChange = { newOptionText ->
-                                            val newOptions = question.options.toMutableList()
-                                            newOptions[optionIndex] = newOptionText
-                                            questions[index] = question.copy(options = newOptions)
-                                            if (index < optionTextErrors.size && optionIndex < optionTextErrors[index].size) {
-                                                val currentOptErrs = optionTextErrors[index].toMutableList()
-                                                currentOptErrs[optionIndex] = null
-                                                optionTextErrors[index] = currentOptErrs
-                                            }
-                                        },
-                                        label = { Text("Opzione ${optionIndex + 1}") },
-                                        modifier = Modifier.weight(1f),
-                                        isError = index < optionTextErrors.size &&
-                                                optionIndex < optionTextErrors[index].size &&
-                                                optionTextErrors[index][optionIndex] != null,
-                                        singleLine = true
-                                    )
-                                    if (question.options.size > 2) {
-                                        IconButton(onClick = {
-                                            val currentOptions = question.options.toMutableList()
-                                            currentOptions.removeAt(optionIndex)
-
-                                            var newCorrectIndex = question.correctOptionIndex
-                                            if (newCorrectIndex == optionIndex) {
-                                                newCorrectIndex = 0
-                                            } else if (newCorrectIndex > optionIndex) {
-                                                newCorrectIndex--
-                                            }
-
-                                            if (currentOptions.isNotEmpty()) {
-                                                newCorrectIndex = newCorrectIndex.coerceIn(0, currentOptions.size - 1)
-                                            } else {
-                                                newCorrectIndex = -1
-                                            }
-
-
-                                            questions[index] = question.copy(options = currentOptions, correctOptionIndex = newCorrectIndex)
-
-                                            if (index < optionTextErrors.size) {
-                                                val optErrs = optionTextErrors[index].toMutableList()
-                                                if (optionIndex < optErrs.size) optErrs.removeAt(optionIndex)
-                                                optionTextErrors[index] = optErrs
-                                            }
-                                        }) {
-                                            Icon(Icons.Default.Delete, contentDescription = "Rimuovi opzione")
-                                        }
-                                    }
-                                }
-                                if (index < optionTextErrors.size &&
-                                    optionIndex < optionTextErrors[index].size &&
-                                    optionTextErrors[index][optionIndex] != null
-                                ) {
-                                    Text(
-                                        optionTextErrors[index][optionIndex]!!,
-                                        color = MaterialTheme.colorScheme.error,
-                                        style = MaterialTheme.typography.bodySmall,
-                                        modifier = Modifier.padding(start = 48.dp)
-                                    )
-                                }
-                            }
-                            if (question.options.size < 4) {
-                                TextButton(
-                                    onClick = {
-                                        val newOptions = question.options.toMutableList()
-                                        newOptions.add("")
-                                        questions[index] = question.copy(options = newOptions)
-                                        if (index < optionTextErrors.size) {
-                                            val optErrs = optionTextErrors[index].toMutableList()
-                                            optErrs.add(null)
-                                            optionTextErrors[index] = optErrs
-                                        }
-                                    },
-                                    modifier = Modifier.fillMaxWidth()
-                                ) {
-                                    Icon(Icons.Default.Add, contentDescription = "Aggiungi opzione")
-                                    Spacer(Modifier.width(4.dp))
-                                    Text("Aggiungi Opzione")
-                                }
-                            }
-                        }
-                        if (index < questions.size - 1) {
-                            Divider(modifier = Modifier.padding(vertical = 8.dp))
-                        }
+                    itemsIndexed(questions, key = { _, q -> q.id }) { index, question ->
+                        QuestionEditCard(
+                            question = question,
+                            questionIndex = index,
+                            questionTextError = questionTextErrors.getOrNull(index),
+                            optionTextErrors = optionTextErrors.getOrNull(index) ?: List(question.options.size) { null },
+                            onQuestionChange = { updatedQuestion ->
+                                questions[index] = updatedQuestion
+                            },
+                            onRemoveQuestion = {
+                                if (questions.size > 1) questions.removeAt(index)
+                            },
+                            isLastQuestion = index == questions.size - 1
+                        )
                     }
                 }
-
-                Spacer(modifier = Modifier.height(8.dp))
-
                 Button(
                     onClick = {
-                        questions.add(
-                            QuizQuestion(
-                                text = "",
-                                options = List(2) { "" },
-                                correctOptionIndex = 0
-                            )
-                        )
+                        questions.add(QuizQuestion(id = uuid4(), text = "", options = mutableStateListOf("", ""), correctOptionIndex = -1))
                         questionTextErrors.add(null)
-                        optionTextErrors.add(List(2) { null })
+                        optionTextErrors.add(mutableStateListOf(null, null))
                     },
-                    modifier = Modifier.fillMaxWidth()
+                    modifier = Modifier.align(Alignment.End).padding(top = 8.dp)
                 ) {
-                    Icon(Icons.Default.Add, contentDescription = "Aggiungi Domanda")
-                    Spacer(modifier = Modifier.width(4.dp))
                     Text("Aggiungi Domanda")
                 }
             }
         },
         confirmButton = {
-            Button(
-                onClick = {
-                    if (validateQuiz()) {
-                        val finalQuestions = questions.map { q ->
-
-                            val validCorrectIndex = if (q.options.isEmpty()) -1
-                            else q.correctOptionIndex.coerceIn(0, q.options.size - 1)
-                            q.copy(correctOptionIndex = validCorrectIndex)
-                        }
-                        val quiz = Quiz(
-                            title = title.trim(),
-                            questions = finalQuestions.filter { it.text.isNotBlank() && it.options.size >= 2 && it.options.all { opt -> opt.isNotBlank() } }
-                        )
-                        if (quiz.questions.isNotEmpty()){
-                            onCreateQuiz(quiz)
-                        }
-                    }
+            Button(onClick = {
+                if (validateQuiz()) {
+                    val newQuiz = Quiz(
+                        id = existingQuiz?.id ?: uuid4(),
+                        title = title,
+                        questions = questions.toList().map { it.copy(options = it.options.toList()) }
+                    )
+                    onCreateQuiz(newQuiz)
                 }
-            ) {
-                Text("Crea")
-            }
+            }) { Text(if (existingQuiz == null) "Crea" else "Salva") }
         },
         dismissButton = {
-            TextButton(onClick = onDismiss) {
-                Text("Annulla")
-            }
+            TextButton(onClick = onDismiss) { Text("Annulla") }
         }
     )
 }
+
+@OptIn(ExperimentalLayoutApi::class)
+@Composable
+fun QuestionEditCard(
+    question: QuizQuestion,
+    questionIndex: Int,
+    questionTextError: String?,
+    optionTextErrors: List<String?>,
+    onQuestionChange: (QuizQuestion) -> Unit,
+    onRemoveQuestion: () -> Unit,
+    isLastQuestion: Boolean
+) {
+    Column(modifier = Modifier.padding(vertical = 8.dp)) {
+        OutlinedTextField(
+            value = question.text,
+            onValueChange = { newText -> onQuestionChange(question.copy(text = newText)) },
+            label = { Text("Domanda ${questionIndex + 1}") },
+            isError = questionTextError != null,
+            modifier = Modifier.fillMaxWidth(),
+            trailingIcon = {
+                if (questionIndex > 0 || !isLastQuestion) {
+                    IconButton(onClick = onRemoveQuestion) {
+                        Icon(Icons.Filled.Delete, "Rimuovi domanda")
+                    }
+                }
+            }
+        )
+        if (questionTextError != null) {
+            Text(questionTextError, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall)
+        }
+        Spacer(modifier = Modifier.height(8.dp))
+        question.options.forEachIndexed { optIndex, option ->
+            Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
+                OutlinedTextField(
+                    value = option,
+                    onValueChange = { newOptionText ->
+                        val newOptions = question.options.toMutableList()
+                        newOptions[optIndex] = newOptionText
+                        onQuestionChange(question.copy(options = newOptions))
+                    },
+                    label = { Text("Opzione ${optIndex + 1}") },
+                    isError = optionTextErrors.getOrNull(optIndex) != null,
+                    modifier = Modifier.weight(1f).padding(end = 4.dp),
+                )
+                if (question.options.size > 2) {
+                    IconButton(onClick = {
+                        val newOptions = question.options.toMutableList()
+                        newOptions.removeAt(optIndex)
+                        val newCorrectIndex = if (question.correctOptionIndex == optIndex) -1
+                        else if (question.correctOptionIndex > optIndex) question.correctOptionIndex - 1
+                        else question.correctOptionIndex
+                        onQuestionChange(question.copy(options = newOptions, correctOptionIndex = newCorrectIndex))
+                    }) {
+                        Icon(Icons.Filled.Close, "Rimuovi opzione")
+                    }
+                }
+            }
+            optionTextErrors.getOrNull(optIndex)?.let {
+                Text(it, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall)
+            }
+        }
+        Button(onClick = {
+            val newOptions = question.options.toMutableList()
+            newOptions.add("")
+            onQuestionChange(question.copy(options = newOptions))
+        }, modifier = Modifier.padding(top = 4.dp)) {
+            Text("Aggiungi Opzione")
+        }
+
+        Spacer(modifier = Modifier.height(8.dp))
+        Text("Risposta Corretta:", style = MaterialTheme.typography.bodyMedium)
+        FlowRow(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(4.dp)
+        ) {
+            question.options.forEachIndexed { index, optionText ->
+                if (optionText.isNotBlank()) {
+                    FilterChip(
+                        selected = index == question.correctOptionIndex,
+                        onClick = { onQuestionChange(question.copy(correctOptionIndex = index)) },
+                        label = { Text("Opzione ${index + 1}") }
+                    )
+                }
+            }
+        }
+        if (!isLastQuestion) {
+            Divider(modifier = Modifier.padding(top = 16.dp))
+        }
+    }
+}
+
 
 private fun formatTimestamp(timestamp: Long): String {
     val currentTime = Clock.System.now().toEpochMilliseconds()
@@ -704,9 +482,14 @@ private fun formatTimestamp(timestamp: Long): String {
     val hours = minutes / 60
 
     return when {
-        seconds < 60 -> "Pochi secondi fa"
-        minutes < 60 -> "${minutes}m fa"
-        hours < 24 -> "${hours}h fa"
-        else -> "${hours / 24}g fa"
+        seconds < 5 -> "Ora"
+        seconds < 60 -> "$seconds s fa"
+        minutes < 2 -> "1 min fa"
+        minutes < 60 -> "$minutes min fa"
+        hours < 2 -> "1 h fa"
+        hours < 24 -> "$hours h fa"
+        else -> "${hours / 24} g fa"
     }
 }
+
+fun uuid4(): String = com.benasher44.uuid.uuid4().toString()

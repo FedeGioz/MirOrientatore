@@ -23,7 +23,7 @@ import com.federicogiordano.mirorientatore.viewmodels.StatusViewModel
 @Composable
 fun StatusAppBar(
     statusViewModel: StatusViewModel,
-    onLogout: () -> Unit = {}
+    onNavigateToSettings: () -> Unit
 ) {
     val status by statusViewModel.status.collectAsState(null)
 
@@ -39,8 +39,10 @@ fun StatusAppBar(
             }
         },
         actions = {
-            IconButton(onClick = onLogout) {
-                Icon(Icons.Default.Settings, contentDescription = "Logout")
+            IconButton(
+                onClick = onNavigateToSettings
+            ) {
+                Icon(Icons.Default.Settings, contentDescription = "Impostazioni")
             }
         }
     )

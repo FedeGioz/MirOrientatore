@@ -15,11 +15,22 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
-import kotlinx.serialization.encodeToString
+import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
 import kotlin.time.Duration
 import java.util.concurrent.ConcurrentHashMap
 import com.federicogiordano.mirorientatore.data.QuizAnswer
+
+@Serializable
+private data class ClientAnswerPayload(
+    val quizId: String,
+    val questionId: String,
+    val selectedOption: String,
+    val id: String? = null,
+    val studentId: String? = null,
+    val studentName: String? = null,
+    val isCorrect: Boolean? = null
+)
 
 actual class WebSocketServer {
     private val _connectedStudents = MutableStateFlow<List<StudentConnection>>(emptyList())
@@ -30,6 +41,8 @@ actual class WebSocketServer {
     private var server: ApplicationEngine? = null
     private val scope = CoroutineScope(Dispatchers.IO)
     private var pingJob: Job? = null
+
+    private val jsonParser = Json { ignoreUnknownKeys = true }
 
     actual fun start(port: Int) {
         val serverInstance = embeddedServer(Netty, port = port) {
@@ -45,7 +58,7 @@ actual class WebSocketServer {
                     var studentId = ""
                     try {
                         val firstMessage = incoming.receive() as? Frame.Text ?: return@webSocket
-                        val connectionInfo = Json.decodeFromString<StudentConnection>(firstMessage.readText())
+                        val connectionInfo = jsonParser.decodeFromString<StudentConnection>(firstMessage.readText())
 
                         studentId = connectionInfo.id
 
@@ -56,13 +69,14 @@ actual class WebSocketServer {
 
                         for (frame in incoming) {
                             if (frame is Frame.Text) {
-                                val message = Json.decodeFromString<WebSocketMessage>(frame.readText())
+                                val message = jsonParser.decodeFromString<WebSocketMessage>(frame.readText())
                                 scope.launch {
                                     processMessage(message, studentId)
                                 }
                             }
                         }
                     } catch (e: Exception) {
+                        println("Error during WebSocket connection or message handling for $studentId: ${e.message}\n${e.stackTraceToString()}")
                         handleDisconnection(studentId)
                     }
                 }
@@ -80,9 +94,7 @@ actual class WebSocketServer {
         pingJob = scope.launch {
             while (isActive) {
                 delay(10000)
-
                 val disconnectedIds = mutableListOf<String>()
-
                 studentSessions.forEach { (id, session) ->
                     try {
                         session.send(Frame.Ping(ByteArray(0)))
@@ -90,7 +102,6 @@ actual class WebSocketServer {
                         disconnectedIds.add(id)
                     }
                 }
-
                 disconnectedIds.forEach { handleDisconnection(it) }
             }
         }
@@ -100,9 +111,7 @@ actual class WebSocketServer {
         if (studentId.isNotEmpty()) {
             studentSessions.remove(studentId)
             studentMap.remove(studentId)
-
             _connectedStudents.value = studentMap.values.toList()
-
             println("Studente disconnesso: $studentId")
         }
     }
@@ -118,40 +127,37 @@ actual class WebSocketServer {
 
     private suspend fun processMessage(message: WebSocketMessage, senderId: String) {
         when (message.type) {
-            "QUIZ_ANSWER" -> {
+            "ANSWER", "QUIZ_ANSWER" -> {
                 try {
                     val studentName = studentMap[senderId]?.name ?: "Studente Sconosciuto"
 
-                    val answerContent = Json.decodeFromString<HashMap<String, String>>(message.content.toString())
+                    val answerPayload = jsonParser.decodeFromString<ClientAnswerPayload>(message.content)
 
                     val quizAnswer = QuizAnswer(
                         studentId = senderId,
                         studentName = studentName,
-                        quizId = answerContent["quizId"] ?: "",
-                        questionId = answerContent["questionId"] ?: "",
-                        question = answerContent["question"] ?: "",
-                        answer = answerContent["answer"] ?: ""
+                        quizId = answerPayload.quizId,
+                        questionId = answerPayload.questionId,
+                        question = "",
+                        answer = answerPayload.selectedOption
                     )
 
                     QuizService.getInstance().addAnswer(quizAnswer)
 
-                    sendToStudent(senderId, WebSocketMessage(
+                    val confirmationMessage = WebSocketMessage(
                         type = "ANSWER_RECEIVED",
                         content = "La tua risposta è stata ricevuta",
                         sender = "professor"
-                    ))
+                    )
+                    sendToStudent(senderId, confirmationMessage)
 
-                    println("Ricevuta risposta al quiz da $studentName: ${answerContent["answer"]}")
+                    println("Ricevuta risposta al quiz da $studentName (ID: $senderId): ${answerPayload.selectedOption}")
                 } catch (e: Exception) {
-                    println("Errore nell'elaborazione della risposta al quiz: ${e.message}")
+                    println("Errore nell'elaborazione della risposta al quiz da $senderId: ${e.message}\n${e.stackTraceToString()}")
                 }
             }
-//            "HELP_REQUEST" -> {
-//                // TODO
-//            }
             else -> {
-                broadcastMessage(message)
-                println("MESSAGGIO RICEVUTO: ${message.type}")
+                println("Received unhandled WebSocket message from $senderId: type='${message.type}', content='${message.content}'")
             }
         }
     }
@@ -159,15 +165,18 @@ actual class WebSocketServer {
     actual suspend fun sendToStudent(studentId: String, message: WebSocketMessage) {
         studentSessions[studentId]?.let { session ->
             try {
-                session.send(Frame.Text(Json.encodeToString(message)))
+                val messageJson = jsonParser.encodeToString(message)
+                println("Sending message to student $studentId: $messageJson")
+                session.send(Frame.Text(messageJson))
             } catch (e: Exception) {
+                println("Failed to send message to student $studentId: ${e.message}")
                 handleDisconnection(studentId)
             }
         }
     }
 
     actual suspend fun broadcastMessage(message: WebSocketMessage) {
-        val messageJson = Json.encodeToString(message)
+        val messageJson = jsonParser.encodeToString(message)
         val disconnectedIds = mutableListOf<String>()
 
         println("Broadcasting message. Current student sessions: ${studentSessions.keys.joinToString(", ")}")

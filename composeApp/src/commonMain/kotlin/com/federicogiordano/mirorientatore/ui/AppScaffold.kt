@@ -3,7 +3,6 @@ package com.federicogiordano.mirorientatore.ui
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Home
-import androidx.compose.material.icons.filled.LibraryBooks
 import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.People
 import androidx.compose.material3.Icon
@@ -30,7 +29,16 @@ fun AppScaffold(
 
     Scaffold(
         topBar = {
-            StatusAppBar(statusViewModel, onLogout)
+            StatusAppBar(
+                statusViewModel = statusViewModel,
+                onNavigateToSettings = {
+                    if (navController.currentBackStackEntry?.destination?.route != Screens.Settings.name) {
+                        navController.navigate(Screens.Settings.name) {
+                            launchSingleTop = true
+                        }
+                    }
+                }
+            )
         },
         bottomBar = {
             NavigationBar {
@@ -71,20 +79,6 @@ fun AppScaffold(
                     onClick = {
                         if (currentRoute != Screens.QuizLauncher.name) {
                             navController.navigate(Screens.QuizLauncher.name) {
-                                popUpTo(Screens.Home.name)
-                                launchSingleTop = true
-                            }
-                        }
-                    }
-                )
-
-                NavigationBarItem(
-                    icon = { Icon(Icons.Default.LibraryBooks, contentDescription = "Libreria Quiz") },
-                    label = { Text(Screens.QuizLibrary.title) },
-                    selected = currentRoute == Screens.QuizLibrary.name,
-                    onClick = {
-                        if (currentRoute != Screens.QuizLibrary.name) {
-                            navController.navigate(Screens.QuizLibrary.name) {
                                 popUpTo(Screens.Home.name)
                                 launchSingleTop = true
                             }
