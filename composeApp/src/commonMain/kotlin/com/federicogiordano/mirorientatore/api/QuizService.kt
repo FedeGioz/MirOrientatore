@@ -22,7 +22,7 @@ class QuizService private constructor() {
     private val _activeQuiz = MutableStateFlow<Quiz?>(null)
     val activeQuiz: StateFlow<Quiz?> = _activeQuiz.asStateFlow()
 
-    private val _studentResults = MutableStateFlow<kotlin.collections.Map<String, StudentQuizResult>>(kotlin.collections.emptyMap<String, StudentQuizResult>())
+    private val _studentResults = MutableStateFlow<kotlin.collections.Map<String, StudentQuizResult>>(emptyMap<String, StudentQuizResult>())
     val studentResults: StateFlow<kotlin.collections.Map<String, StudentQuizResult>> = _studentResults.asStateFlow()
 
     private val _pendingAnswers = MutableStateFlow<List<QuizAnswer>>(emptyList())
@@ -222,7 +222,7 @@ class QuizService private constructor() {
 
     private fun resetActiveSessionData() {
         _activeQuiz.value = null
-        _studentResults.value = kotlin.collections.emptyMap<String, StudentQuizResult>()
+        _studentResults.value = emptyMap<String, StudentQuizResult>()
         _pendingAnswers.value = emptyList()
     }
 

@@ -166,7 +166,7 @@ fun DistanceChart(data: List<DistanceStatistic>) {
             Text("Data", style = MaterialTheme.typography.bodyMedium)
             Text("Distanza (m)", style = MaterialTheme.typography.bodyMedium)
         }
-        Divider(modifier = Modifier.padding(vertical = 8.dp))
+        HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
 
         data.forEach { stat ->
             Row(

@@ -128,8 +128,7 @@ fun QuizManagementScreen(
                 Text("Nessun quiz disponibile. Vai alla libreria per crearne uno.")
             } else {
                 LazyColumn(
-                    modifier = Modifier
-                        .fillMaxWidth()
+                    modifier = Modifier.fillMaxWidth()
                 ) {
                     items(availableQuizzes) { quiz ->
                         AvailableQuizCard(quiz = quiz, onSendQuiz = { onSendQuiz(quiz) })
@@ -137,8 +136,6 @@ fun QuizManagementScreen(
                 }
             }
         } else {
-            val quizService = remember { QuizService.getInstance() }
-
             Text("Quiz Attivo: ${activeQuiz.title}", style = MaterialTheme.typography.headlineSmall)
             Spacer(modifier = Modifier.height(16.dp))
             Button(
@@ -247,19 +244,21 @@ fun CreateQuizDialog(
 ) {
     var title by remember { mutableStateOf(existingQuiz?.title ?: "") }
     val questions = remember {
-        existingQuiz?.questions?.map { it.copy(options = it.options.toMutableList()) }?.toMutableStateList()
-            ?: mutableStateListOf(QuizQuestion(id = uuid4(), text = "", options = mutableStateListOf("", ""), correctOptionIndex = -1))
+        existingQuiz?.questions?.map {
+            it.copy(options = it.options.toMutableList())
+        }?.toMutableStateList()
+            ?: mutableStateListOf(QuizQuestion(id = uuid4(), text = "", options = mutableStateListOf("", ""), correctOptionIndex = -1 /*, points = defaultPoints */))
     }
     var titleError by remember { mutableStateOf<String?>(null) }
 
     val questionTextErrors = remember {
-        val initialErrors: List<String?> = existingQuiz?.questions?.map { null } ?: List(questions.size) { null }
+        val initialErrors: List<String?> = List(questions.size) { null }
         initialErrors.toMutableStateList()
     }
     val optionTextErrors = remember {
-        val initialOptionErrors: List<List<String?>> = existingQuiz?.questions?.map { question ->
-            List(question.options.size) { null }
-        } ?: List(questions.size) { List(questions.getOrNull(it)?.options?.size ?: 2) { null } }
+        val initialOptionErrors: List<List<String?>> = List(questions.size) { qIndex ->
+            List(questions[qIndex].options.size) { null }
+        }
         initialOptionErrors.toMutableStateList()
     }
 
@@ -278,10 +277,10 @@ fun CreateQuizDialog(
         while (optionTextErrors.size > questions.size) optionTextErrors.removeLast()
 
         questions.forEachIndexed { qIndex, question ->
-            optionTextErrors[qIndex] = optionTextErrors[qIndex].toMutableList().apply {
-                while (size < question.options.size) add(null)
-                while (size > question.options.size) removeLast()
-            }
+            val currentQOptionErrors = optionTextErrors.getOrNull(qIndex)?.toMutableList()
+                ?: mutableListOf()
+            while (currentQOptionErrors.size < question.options.size) currentQOptionErrors.add(null)
+            while (currentQOptionErrors.size > question.options.size) currentQOptionErrors.removeLast()
 
             var questionSpecificErrorAccumulator = ""
 
@@ -291,11 +290,12 @@ fun CreateQuizDialog(
 
             question.options.forEachIndexed { optIndex, option ->
                 val oError = if (option.isBlank()) "L'opzione non può essere vuota" else null
-                if (optIndex < optionTextErrors[qIndex].size) {
-                    (optionTextErrors[qIndex] as MutableList<String?>)[optIndex] = oError
+                if (optIndex < currentQOptionErrors.size) {
+                    currentQOptionErrors[optIndex] = oError
                 }
                 if (oError != null) currentIsValid = false
             }
+            optionTextErrors[qIndex] = currentQOptionErrors.toList()
 
             if (question.correctOptionIndex < 0 || question.correctOptionIndex >= question.options.size) {
                 questionSpecificErrorAccumulator += " Devi selezionare una risposta corretta."
@@ -317,7 +317,7 @@ fun CreateQuizDialog(
     }
 
     AlertDialog(
-        onDismissRequest = { /* Deliberately empty, use dismissButton */ },
+        onDismissRequest = {},
         properties = DialogProperties(usePlatformDefaultWidth = false),
         modifier = Modifier.fillMaxWidth(0.95f).fillMaxHeight(0.9f),
         title = { Text(if (existingQuiz == null) "Crea Nuovo Quiz" else "Modifica Quiz") },
@@ -345,19 +345,34 @@ fun CreateQuizDialog(
                             optionTextErrors = optionTextErrors.getOrNull(index) ?: List(question.options.size) { null },
                             onQuestionChange = { updatedQuestion ->
                                 questions[index] = updatedQuestion
+                                questionTextErrors[index] = null
+                                optionTextErrors[index] = List(updatedQuestion.options.size) { null }
                             },
                             onRemoveQuestion = {
-                                if (questions.size > 1) questions.removeAt(index)
+                                if (questions.size > 1) {
+                                    questions.removeAt(index)
+                                    if (index < questionTextErrors.size) questionTextErrors.removeAt(index)
+                                    if (index < optionTextErrors.size) optionTextErrors.removeAt(index)
+                                }
                             },
-                            isLastQuestion = index == questions.size - 1
+                            isLastQuestion = index == questions.size - 1,
+                            canBeRemoved = questions.size > 1
                         )
                     }
                 }
                 Button(
                     onClick = {
-                        questions.add(QuizQuestion(id = uuid4(), text = "", options = mutableStateListOf("", ""), correctOptionIndex = -1))
+                        val newQuestionOptions = mutableStateListOf("", "")
+                        questions.add(
+                            QuizQuestion(
+                                id = uuid4(),
+                                text = "",
+                                options = newQuestionOptions,
+                                correctOptionIndex = -1
+                            )
+                        )
                         questionTextErrors.add(null)
-                        optionTextErrors.add(mutableStateListOf(null, null))
+                        optionTextErrors.add(List(newQuestionOptions.size) { null })
                     },
                     modifier = Modifier.align(Alignment.End).padding(top = 8.dp)
                 ) {
@@ -368,10 +383,13 @@ fun CreateQuizDialog(
         confirmButton = {
             Button(onClick = {
                 if (validateQuiz()) {
+                    val finalQuestions = questions.map { uiQ ->
+                        uiQ.copy(options = uiQ.options.toList())
+                    }
                     val newQuiz = Quiz(
                         id = existingQuiz?.id ?: uuid4(),
                         title = title,
-                        questions = questions.toList().map { it.copy(options = it.options.toList()) }
+                        questions = finalQuestions
                     )
                     onCreateQuiz(newQuiz)
                 }
@@ -392,7 +410,8 @@ fun QuestionEditCard(
     optionTextErrors: List<String?>,
     onQuestionChange: (QuizQuestion) -> Unit,
     onRemoveQuestion: () -> Unit,
-    isLastQuestion: Boolean
+    isLastQuestion: Boolean,
+    canBeRemoved: Boolean
 ) {
     Column(modifier = Modifier.padding(vertical = 8.dp)) {
         OutlinedTextField(
@@ -402,7 +421,7 @@ fun QuestionEditCard(
             isError = questionTextError != null,
             modifier = Modifier.fillMaxWidth(),
             trailingIcon = {
-                if (questionIndex > 0 || !isLastQuestion) {
+                if (canBeRemoved) {
                     IconButton(onClick = onRemoveQuestion) {
                         Icon(Icons.Filled.Delete, "Rimuovi domanda")
                     }
@@ -468,7 +487,7 @@ fun QuestionEditCard(
             }
         }
         if (!isLastQuestion) {
-            Divider(modifier = Modifier.padding(top = 16.dp))
+            HorizontalDivider(modifier = Modifier.padding(top = 16.dp))
         }
     }
 }

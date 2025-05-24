@@ -25,7 +25,7 @@ import com.federicogiordano.mirorientatore.data.QuizAnswer
 private data class ClientAnswerPayload(
     val quizId: String,
     val questionId: String,
-    val selectedOption: String,
+    val answer: String, // Changed from selectedOption to answer
     val id: String? = null,
     val studentId: String? = null,
     val studentName: String? = null,
@@ -138,8 +138,8 @@ actual class WebSocketServer {
                         studentName = studentName,
                         quizId = answerPayload.quizId,
                         questionId = answerPayload.questionId,
-                        question = "",
-                        answer = answerPayload.selectedOption
+                        question = "", // This is populated later by QuizService
+                        answer = answerPayload.answer // Changed from answerPayload.selectedOption
                     )
 
                     QuizService.getInstance().addAnswer(quizAnswer)
@@ -151,7 +151,7 @@ actual class WebSocketServer {
                     )
                     sendToStudent(senderId, confirmationMessage)
 
-                    println("Ricevuta risposta al quiz da $studentName (ID: $senderId): ${answerPayload.selectedOption}")
+                    println("Ricevuta risposta al quiz da $studentName (ID: $senderId): ${answerPayload.answer}")
                 } catch (e: Exception) {
                     println("Errore nell'elaborazione della risposta al quiz da $senderId: ${e.message}\n${e.stackTraceToString()}")
                 }
