@@ -1,5 +1,6 @@
 package com.federicogiordano.mirorientatore.functions
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
@@ -14,6 +15,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
 import com.federicogiordano.mirorientatore.Screens
+import com.federicogiordano.mirorientatore.api.RobotWebSocketClient
 import com.federicogiordano.mirorientatore.api.StudentConnection
 import com.federicogiordano.mirorientatore.api.WebSocketMessage
 import com.federicogiordano.mirorientatore.api.WebSocketServerManager
@@ -25,6 +27,8 @@ fun ConnectedStudentsPage(navController: NavHostController) {
     val webSocketServer = remember { WebSocketServerManager.getInstance() }
     val connectedStudents by webSocketServer.connectedStudents.collectAsState()
     val scope = rememberCoroutineScope()
+
+    val anyStudentHasJoystick = connectedStudents.any { it.hasJoystickAccess }
 
     AppScaffold(
         navController = navController,
@@ -46,7 +50,6 @@ fun ConnectedStudentsPage(navController: NavHostController) {
                     "Studenti Connessi",
                     style = MaterialTheme.typography.headlineMedium
                 )
-
                 Text(
                     "Totale: ${connectedStudents.size}",
                     style = MaterialTheme.typography.bodyLarge
@@ -55,7 +58,9 @@ fun ConnectedStudentsPage(navController: NavHostController) {
 
             if (connectedStudents.isEmpty()) {
                 Box(
-                    modifier = Modifier.fillMaxSize(),
+                    modifier = Modifier
+                        .weight(1f)
+                        .fillMaxWidth(),
                     contentAlignment = Alignment.Center
                 ) {
                     Text("Nessuno studente connesso", style = MaterialTheme.typography.bodyLarge)
@@ -63,11 +68,12 @@ fun ConnectedStudentsPage(navController: NavHostController) {
             } else {
                 LazyVerticalGrid(
                     columns = GridCells.Adaptive(minSize = 300.dp),
-                    contentPadding = PaddingValues(16.dp),
+                    contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 16.dp, bottom = if (anyStudentHasJoystick) 80.dp else 16.dp),
                     horizontalArrangement = Arrangement.spacedBy(16.dp),
-                    verticalArrangement = Arrangement.spacedBy(16.dp)
+                    verticalArrangement = Arrangement.spacedBy(16.dp),
+                    modifier = Modifier.weight(1f)
                 ) {
-                    items(connectedStudents) { student ->
+                    items(connectedStudents, key = { it.id }) { student ->
                         StudentCard(
                             student = student,
                             onDisconnect = {
@@ -76,6 +82,17 @@ fun ConnectedStudentsPage(navController: NavHostController) {
                                         student.id,
                                         WebSocketMessage("DISCONNECT", "Disconnesso dal professore", "professor")
                                     )
+                                }
+                            },
+                            onAllowJoystick = {
+                                scope.launch {
+                                    RobotWebSocketClient().requestManualControl()
+                                    webSocketServer.allowJoystickForStudent(student.id)
+                                }
+                            },
+                            onRevokeJoystick = {
+                                scope.launch {
+                                    webSocketServer.revokeJoystickForStudent(student.id)
                                 }
                             }
                         )
@@ -87,9 +104,45 @@ fun ConnectedStudentsPage(navController: NavHostController) {
 }
 
 @Composable
-fun StudentCard(student: StudentConnection, onDisconnect: () -> Unit) {
+fun StudentCard(
+    student: StudentConnection,
+    onDisconnect: () -> Unit,
+    onAllowJoystick: () -> Unit,
+    onRevokeJoystick: () -> Unit
+) {
+    var showDialog by remember { mutableStateOf(false) }
+
+    if (showDialog) {
+        AlertDialog(
+            onDismissRequest = { showDialog = false },
+            title = { Text(if (student.hasJoystickAccess) "Revoca Controllo Joystick" else "Abilita Controllo Joystick") },
+            text = { Text(if (student.hasJoystickAccess) "Sei sicuro di voler revocare il controllo joystick per ${student.name}?" else "Sei sicuro di voler abilitare il controllo joystick per ${student.name}?") },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        if (student.hasJoystickAccess) {
+                            onRevokeJoystick()
+                        } else {
+                            onAllowJoystick()
+                        }
+                        showDialog = false
+                    }
+                ) {
+                    Text(if (student.hasJoystickAccess) "Revoca" else "Abilita")
+                }
+            },
+            dismissButton = {
+                Button(onClick = { showDialog = false }) {
+                    Text("Annulla")
+                }
+            }
+        )
+    }
+
     Card(
-        modifier = Modifier.fillMaxWidth()
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable { showDialog = true }
     ) {
         Row(
             modifier = Modifier
@@ -109,12 +162,25 @@ fun StudentCard(student: StudentConnection, onDisconnect: () -> Unit) {
                     text = "ID: ${student.id}",
                     style = MaterialTheme.typography.bodyMedium
                 )
+                if (student.hasJoystickAccess) {
+                    Text(
+                        text = "Controllo Joystick: Abilitato",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.primary
+                    )
+                } else {
+                    Text(
+                        text = "Controllo Joystick: Disabilitato",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+                    )
+                }
             }
 
             IconButton(onClick = onDisconnect) {
                 Icon(
                     imageVector = Icons.Default.Close,
-                    contentDescription = "Disconnetti",
+                    contentDescription = "Disconnetti ${student.name}",
                     tint = MaterialTheme.colorScheme.error
                 )
             }

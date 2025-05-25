@@ -36,6 +36,10 @@ class MissionService : BaseApiService() {
         client.delete(ApiClient.getEndpoint("mission_queue") + "/${mission.guid}")
     }
 
+    suspend fun clearMissionQueue(){
+        client.delete(ApiClient.getEndpoint("mission_queue"))
+    }
+
     suspend fun reorderMissionQueue(mission: RobotMission, direction: Boolean) {
         val response = client.get(ApiClient.getEndpoint("mission_queue") + "/${mission.guid}")
 

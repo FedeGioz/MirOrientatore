@@ -6,7 +6,8 @@ import kotlinx.serialization.Serializable
 @Serializable
 data class StudentConnection(
     val id: String,
-    val name: String
+    val name: String,
+    val hasJoystickAccess: Boolean = false // Renamed from hasJoystickPermission for consistency
 )
 
 @Serializable
@@ -34,4 +35,8 @@ expect class WebSocketServer() {
     fun stop()
     suspend fun sendToStudent(studentId: String, message: WebSocketMessage)
     suspend fun broadcastMessage(message: WebSocketMessage)
+
+    suspend fun allowJoystickForStudent(studentId: String)
+    suspend fun revokeJoystickForStudent(studentId: String)
+    suspend fun revokeAllJoystickAccess()
 }

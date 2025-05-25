@@ -1,14 +1,16 @@
 package com.federicogiordano.mirorientatore.data
 
 import kotlinx.serialization.SerialName
+import kotlinx.serialization.Serializable
 
+@Serializable
 data class RobotStatus(
     @SerialName("mode_id") val modeId: Int = -1,
     @SerialName("mission_queue_id") val missionQueueId: String? = null,
     @SerialName("robot_name") val robotName: String = "",
     @SerialName("uptime") val uptime: Long = -1,
     @SerialName("errors") val errors: List<String> = emptyList(),
-    @SerialName("battery_percentage") val batteryPercentage: Float = 0f,
+    @SerialName("battery_percentage") val battery_percentage: Float = 0f,
     @SerialName("map_id") val mapId: String = "",
     @SerialName("mission_text") val missionText: String = "",
     @SerialName("state_id") val stateId: Int = -1,
@@ -20,13 +22,15 @@ data class RobotStatus(
     @SerialName("position") val position: Position = Position()
 )
 
+@Serializable
 data class Velocity(
-    val linear: Float? = null,
-    val angular: Float? = null
+    @SerialName("linear") val linear: Float? = null,
+    @SerialName("angular") val angular: Float? = null
 )
 
+@Serializable
 data class Position(
-    val x: Float? = null,
-    val y: Float? = null,
-    val orientation: Float? = null
+    @SerialName("x") val x: Float? = null,
+    @SerialName("y") val y: Float? = null,
+    @SerialName("orientation") val orientation: Float? = null
 )

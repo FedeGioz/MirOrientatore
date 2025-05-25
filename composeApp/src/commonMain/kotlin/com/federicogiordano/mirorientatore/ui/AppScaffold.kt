@@ -5,6 +5,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.People
+import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material3.Icon
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
@@ -52,6 +53,20 @@ fun AppScaffold(
                         if (currentRoute != Screens.Home.name) {
                             navController.navigate(Screens.Home.name) {
                                 popUpTo(Screens.Home.name) { inclusive = true }
+                                launchSingleTop = true
+                            }
+                        }
+                    }
+                )
+
+                NavigationBarItem(
+                    icon = { Icon(Icons.Default.PlayArrow, contentDescription = "Orientamento") },
+                    label = { Text(Screens.Tour.title) },
+                    selected = currentRoute == Screens.Tour.name,
+                    onClick = {
+                        if (currentRoute != Screens.Tour.name) {
+                            navController.navigate(Screens.Tour.name) {
+                                popUpTo(Screens.Tour.name) { inclusive = true }
                                 launchSingleTop = true
                             }
                         }

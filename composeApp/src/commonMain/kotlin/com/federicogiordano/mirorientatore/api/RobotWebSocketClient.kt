@@ -20,7 +20,7 @@ object RobotWebSocketManager {
 }
 
 class RobotWebSocketClient(
-    private val serverUrl: String = "ws://192.168.12.20:9090/",
+    private val serverUrl: String = "ws://192.168.1.63:9090/",
     private val onConnectionStatus: (Boolean, String?) -> Unit = { _, _ -> }
 ) {
 
@@ -176,13 +176,7 @@ class RobotWebSocketClient(
 
     private suspend fun sendMessage(message: String) {
         try {
-            session?.let {
-                if (isConnected) {
-                    it.send(Frame.Text(message))
-                } else {
-                    println("Impossibile inviare il messaggio: WebSocket non connesso")
-                }
-            } ?: println("Impossibile inviare il messaggio: La sessione è null")
+            session?.send(Frame.Text(message))
         } catch (e: Exception) {
             println("Errore durante l'invio del messaggio: ${e.message}")
             isConnected = false

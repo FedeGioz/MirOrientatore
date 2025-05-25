@@ -14,7 +14,6 @@ Professore (riciclare app principale):
 - Selezione del tipo di indirizzo, cosi magari da fare un tutorial in app dell'app di per se' oppure robot o logistica (OPZ)
 - Template di bundle percorso + quiz + suoni da poter ripetere
 - Generazione di un report PDF con le risposte e sondaggi alla fine
-- Modalita' ipovedente, robot fa beep beep per far seguire studente
 
 Studente:
 - Input del nome per identificare gli alunni e misurare anche competenze medie/turnover di iscrizione
@@ -22,7 +21,5 @@ Studente:
 - Visualizzazione mappa del robot e 3d scan
 - Richiesta di controllo al prof --> mettere i protective fields per evitare schianti e max speed
 - Brochure digitale dopo la visita che rimane tipo una history con i quiz e il materiale condiviso
-- Cambio colore in contemporanea (mettere delay per evitare distrazioni durante visita, capire mutex)
+- Cambio colore in contemporanea (mettere delay per evitare distrazioni durante visita, capire mutex) --> Capire websocket (solo missione)
 - Piccolo sondaggio personale e feedback a fine visita mandabile da prof, consigliare magari indirizzo alla fine
-- Alla fine se si riesce a mettere una videocamera sopra si potrebbe mandare il video della visita agli studenti via mail/app
-- Domande al robot, chep risponde con AI automaticamente

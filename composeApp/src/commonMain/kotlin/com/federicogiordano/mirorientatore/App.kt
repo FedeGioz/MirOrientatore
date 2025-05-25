@@ -31,6 +31,10 @@ fun App(
             HomeView(navController)
         }
 
+        composable(Screens.Tour.name) {
+            TourPage(navController)
+        }
+
         composable(Screens.ConnectedStudents.name) {
             ConnectedStudentsPage(navController)
         }
