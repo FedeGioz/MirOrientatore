@@ -1,4 +1,4 @@
-package com.federicogiordano.mirage.api
+package com.federicogiordano.mirorientatore.api
 
 import io.ktor.client.*
 import io.ktor.client.engine.cio.*
@@ -12,7 +12,7 @@ import io.ktor.serialization.kotlinx.json.*
 import kotlinx.serialization.json.Json
 
 object ApiClient {
-    private const val API_URL = "http://192.168.1.63:8080/api/v2.0.0"
+    private const val API_URL = "http://192.168.12.20/api/v2.0.0"
 
     val httpClient = HttpClient(CIO) {
         install(ContentNegotiation) {

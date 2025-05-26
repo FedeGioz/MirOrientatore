@@ -20,7 +20,7 @@ object RobotWebSocketManager {
 }
 
 class RobotWebSocketClient(
-    private val serverUrl: String = "ws://192.168.1.63:9090/",
+    private val serverUrl: String = "ws://192.168.12.20:9090/",
     private val onConnectionStatus: (Boolean, String?) -> Unit = { _, _ -> }
 ) {
 

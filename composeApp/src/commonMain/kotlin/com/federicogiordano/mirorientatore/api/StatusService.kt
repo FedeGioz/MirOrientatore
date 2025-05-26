@@ -1,7 +1,5 @@
 package com.federicogiordano.mirorientatore.api
 
-import com.federicogiordano.mirage.api.ApiClient
-import com.federicogiordano.mirorientatore.data.RobotMission
 import com.federicogiordano.mirorientatore.data.RobotStatus
 import io.ktor.client.call.*
 import io.ktor.client.request.*
@@ -11,7 +9,6 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.delay
 import kotlinx.serialization.json.Json
-import kotlinx.serialization.decodeFromString
 
 class StatusService : BaseApiService() {
     private val json = Json { ignoreUnknownKeys = true }

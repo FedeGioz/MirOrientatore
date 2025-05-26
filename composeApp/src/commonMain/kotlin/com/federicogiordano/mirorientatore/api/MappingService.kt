@@ -1,12 +1,14 @@
 package com.federicogiordano.mirorientatore.api
 
-import com.federicogiordano.mirage.api.ApiClient
 import com.federicogiordano.mirorientatore.data.RobotMap
+import com.federicogiordano.mirorientatore.data.RobotMapDetail
 import io.ktor.client.call.*
 import io.ktor.client.request.*
+import io.ktor.client.statement.bodyAsText
 import io.ktor.http.ContentType
 import io.ktor.http.contentType
 import io.ktor.http.isSuccess
+import kotlinx.serialization.json.Json
 
 class MappingService : BaseApiService() {
     suspend fun getMaps(): List<RobotMap> {
@@ -23,6 +25,14 @@ class MappingService : BaseApiService() {
         } catch (e: Exception) {
             false
         }
+    }
+
+    suspend fun getMapImage(mapId: String): String{
+        val response = client.get(ApiClient.getEndpoint("maps") + "/${mapId}").bodyAsText()
+        val json = Json { ignoreUnknownKeys = true }
+        val mapObject = json.decodeFromString<RobotMapDetail>(response)
+        println("STRINGA MAPPA: ${mapObject.map}")
+        return mapObject.map
     }
 }
 
