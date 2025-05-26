@@ -95,6 +95,14 @@ actual class WebSocketServer {
                         studentSessions[studentId] = this
                         studentMap[studentId] = connectionInfo
                         _connectedStudents.value = studentMap.values.toList()
+
+                        val mapImage = MappingService().getMapImage(StatusService().getStatus().mapId)
+                        val message = WebSocketMessage(
+                            type = "MAP_IMAGE",
+                            content = mapImage,
+                            sender = "professor"
+                        )
+                        WebSocketServer().sendToStudent(studentId, message)
                         println("Studente connesso: $studentId - ${connectionInfo.name}. Totale: ${studentMap.size}")
 
                         for (frame in incoming) {

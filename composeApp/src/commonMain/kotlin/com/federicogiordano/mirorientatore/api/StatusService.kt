@@ -32,10 +32,6 @@ class StatusService : BaseApiService() {
         }
     }
 
-    suspend fun getMap(){
-        return client.get(ApiClient.getEndpoint("mission_queue")).body()
-    }
-
     fun statusFlow(intervalSeconds: Long = 10): Flow<RobotStatus> = flow {
         while (true) {
             try {
