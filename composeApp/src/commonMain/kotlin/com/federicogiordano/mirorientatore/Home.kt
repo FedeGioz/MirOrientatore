@@ -43,7 +43,8 @@ enum class Screens(val title: String) {
     ConnectedStudents("Studenti"),
     QuizLauncher("Avvia Quiz"),
     QuizLibrary("Libreria Quiz"),
-    Settings("Impostazioni")
+    Settings("Impostazioni"),
+    Login("Login")
 }
 
 @Composable

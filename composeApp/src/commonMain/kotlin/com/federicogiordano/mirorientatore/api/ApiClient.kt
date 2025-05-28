@@ -13,6 +13,7 @@ import kotlinx.serialization.json.Json
 
 object ApiClient {
     private const val API_URL = "http://192.168.12.20/api/v2.0.0"
+    private var authHeader: String? = null
 
     val httpClient = HttpClient(CIO) {
         install(ContentNegotiation) {
@@ -31,18 +32,20 @@ object ApiClient {
         }
 
         defaultRequest {
-            header(HttpHeaders.Authorization, "Basic aXRpc2RlbHBvenpvOjlhZDVhYjA0NDVkZTE4ZDI4Nzg0NjMzNzNkNmRiZGIxZWUzZTFmZjg2YzBhYmY4OGJiMzU5YzNkYzVmMzBiNGQ=")
+            authHeader?.let {
+                header(HttpHeaders.Authorization, it)
+            }
             contentType(ContentType.Application.Json)
         }
     }
 
-//    fun setAuthHeader(header: String) {
-//        authHeader = header
-//    }
-//
-//    fun clearAuthHeader() {
-//        authHeader = null
-//    }
+    fun setAuthHeader(header: String) {
+        authHeader = header
+    }
+
+    fun clearAuthHeader() {
+        authHeader = null
+    }
 
     fun getEndpoint(path: String): String {
         val cleanPath = if (path.startsWith("/")) path.substring(1) else path

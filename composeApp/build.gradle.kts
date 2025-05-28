@@ -1,4 +1,3 @@
-import org.jetbrains.kotlin.gradle.ExperimentalKotlinGradlePluginApi
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 
 plugins {
@@ -34,6 +33,7 @@ kotlin {
             implementation(libs.androidx.activity.compose)
             implementation(libs.androidx.foundation.android)
             implementation(libs.androidx.material3.android)
+            implementation(libs.datastore.preferences)
         }
         commonMain.dependencies {
             implementation(compose.runtime)
@@ -61,6 +61,9 @@ kotlin {
             implementation(libs.ktor.server.websockets)
             implementation(libs.kotlinx.datetime)
             implementation(libs.uuid)
+            implementation(libs.datastore.preferences)
+            implementation(libs.okio)
+            implementation(project.dependencies.platform("org.kotlincrypto.hash:bom:0.7.0"))
         }
     }
 }

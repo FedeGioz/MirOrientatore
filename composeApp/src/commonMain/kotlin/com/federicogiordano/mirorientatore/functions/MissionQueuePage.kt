@@ -42,6 +42,13 @@ import androidx.navigation.NavHostController
 import com.federicogiordano.mirorientatore.api.RobotWebSocketManager
 import kotlinx.coroutines.launch
 
+// Define what makes a mission valid for display.
+// This is an example; adjust the condition based on your RobotMission structure
+// and what constitutes an "empty" or "invalid" mission.
+// e.g., fun RobotMission.isValidForDisplay(): Boolean = this.name.isNotBlank() && this.guid.isNotBlank()
+fun RobotMission.isValidForDisplay(): Boolean = this.name.isNotBlank()
+
+
 @Composable
 fun MissionQueue(navController: NavHostController) {
     val coroutineScope = rememberCoroutineScope()
@@ -49,10 +56,15 @@ fun MissionQueue(navController: NavHostController) {
     var isLoading by remember { mutableStateOf(true) }
 
     LaunchedEffect(Unit) {
+        isLoading = true // Set loading state at the beginning
         try {
-            missionQueue = MissionService().getMissionQueue()
-            isLoading = false
+            val fetchedMissions = MissionService().getMissionQueue()
+            // Filter missions to only include those valid for display
+            missionQueue = fetchedMissions.filter { it.isValidForDisplay() }
         } catch (e: Exception) {
+            // Log error e (e.g., using Log.e("MissionQueue", "Error fetching queue", e))
+            missionQueue = emptyList() // Ensure queue is empty on error
+        } finally {
             isLoading = false
         }
     }
@@ -96,7 +108,11 @@ fun MissionQueue(navController: NavHostController) {
             }
         } else {
             LazyColumn(modifier = Modifier.fillMaxWidth()) {
-                itemsIndexed(missionQueue) { index, mission ->
+                itemsIndexed(
+                    items = missionQueue,
+                    // Provide a stable key for each item for better performance
+                    key = { _, item -> item.guid }
+                ) { index, mission ->
                     MissionQueueItem(
                         mission = mission,
                         canMoveUp = index > 0,
@@ -104,15 +120,18 @@ fun MissionQueue(navController: NavHostController) {
                         onRemove = {
                             coroutineScope.launch {
                                 MissionService().removeMissionFromQueue(mission)
+                                // Update local state; no need to re-filter if missionQueue already contains only valid items
                                 missionQueue = missionQueue.filter { it.guid != mission.guid }
                             }
                         },
                         onMoveUp = {
                             if (index > 0) {
                                 val newList = missionQueue.toMutableList()
-                                newList.add(index - 1, newList.removeAt(index))
+                                val movedItem = newList.removeAt(index) // The item that is being moved
+                                newList.add(index - 1, movedItem)
                                 coroutineScope.launch {
-                                    MissionService().reorderMissionQueue(newList[index], true)
+                                    // Pass the actual mission that was moved to the service
+                                    MissionService().reorderMissionQueue(movedItem, true)
                                     missionQueue = newList
                                 }
                             }
@@ -120,9 +139,11 @@ fun MissionQueue(navController: NavHostController) {
                         onMoveDown = {
                             if (index < missionQueue.size - 1) {
                                 val newList = missionQueue.toMutableList()
-                                newList.add(index + 1, newList.removeAt(index))
+                                val movedItem = newList.removeAt(index) // The item that is being moved
+                                newList.add(index + 1, movedItem)
                                 coroutineScope.launch {
-                                    MissionService().reorderMissionQueue(newList[index], false)
+                                    // Pass the actual mission that was moved to the service
+                                    MissionService().reorderMissionQueue(movedItem, false)
                                     missionQueue = newList
                                 }
                             }

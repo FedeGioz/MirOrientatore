@@ -6,10 +6,12 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
+import com.federicogiordano.mirorientatore.api.LoginService
 import com.federicogiordano.mirorientatore.api.QuizService
 import com.federicogiordano.mirorientatore.api.WebSocketServerManager
 import com.federicogiordano.mirorientatore.functions.*
 import com.federicogiordano.mirorientatore.functions.settings.SettingsPage
+import com.federicogiordano.mirorientatore.viewmodels.LoginViewModel
 
 @Composable
 fun App(
@@ -18,6 +20,15 @@ fun App(
 ) {
     val navController = rememberNavController()
     val quizService = remember { QuizService.getInstance() }
+    val loginService = remember { LoginService() }
+    val isLoggedIn by loginService.isLoggedIn.collectAsState(initial = false)
+
+    val handleLogout = {
+        loginService.logout()
+        navController.navigate("login") {
+            popUpTo(0) { inclusive = true }
+        }
+    }
 
     LaunchedEffect(Unit) {
         WebSocketServerManager.getInstance().start()
@@ -25,8 +36,13 @@ fun App(
 
     NavHost(
         navController = navController,
-        startDestination = Screens.Home.name
+        startDestination = Screens.Login.name
     ) {
+        composable(Screens.Login.name) {
+            val loginViewModel = remember { LoginViewModel(loginService) }
+            LoginScreen(navController, loginViewModel)
+        }
+
         composable(Screens.Home.name) {
             HomeView(navController)
         }
