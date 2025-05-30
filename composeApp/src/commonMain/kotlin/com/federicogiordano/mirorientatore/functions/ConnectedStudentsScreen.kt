@@ -16,6 +16,7 @@ import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
 import com.federicogiordano.mirorientatore.Screens
 import com.federicogiordano.mirorientatore.api.RobotWebSocketClient
+import com.federicogiordano.mirorientatore.api.RobotWebSocketManager
 import com.federicogiordano.mirorientatore.api.StudentConnection
 import com.federicogiordano.mirorientatore.api.WebSocketMessage
 import com.federicogiordano.mirorientatore.api.WebSocketServerManager
@@ -86,7 +87,7 @@ fun ConnectedStudentsPage(navController: NavHostController) {
                             },
                             onAllowJoystick = {
                                 scope.launch {
-                                    RobotWebSocketClient().requestManualControl()
+                                    RobotWebSocketManager.getClient().requestManualControl()
                                     webSocketServer.allowJoystickForStudent(student.id)
                                 }
                             },

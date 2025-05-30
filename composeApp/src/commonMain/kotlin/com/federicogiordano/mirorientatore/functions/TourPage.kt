@@ -34,7 +34,7 @@ fun TourPage(navController: NavHostController) {
             missionDisplayNames = fetchedMissions.map { it.name }
             selectedMissionName = missionDisplayNames.firstOrNull() ?: ""
         } catch (e: Exception) {
-            println("Error fetching missions: ${e.message}")
+            println("Errore durante il recupero delle missioni: ${e.message}")
             fullRobotMissions = emptyList()
             missionDisplayNames = emptyList()
             selectedMissionName = ""
@@ -90,18 +90,18 @@ fun TourPage(navController: NavHostController) {
                         if (selectedMissionName.isNotEmpty()) {
                             val missionToQueue = fullRobotMissions.find { it.name == selectedMissionName }
                             if (missionToQueue != null) {
-                                println("Start tour: $selectedMissionName")
+                                println("Avvio del tour: $selectedMissionName")
                                 coroutineScope.launch {
                                     try {
                                         missionService.addMissionToQueue(mission = missionToQueue)
                                         robotWebSocketClient.startMissionQueue()
                                         tourState = TourControlState.STARTED
                                     } catch (e: Exception) {
-                                        println("Error adding mission to queue or starting queue: ${e.message}")
+                                        println("Errore durante l'aggiunta della missione alla coda o l'avvio della coda: ${e.message}")
                                     }
                                 }
                             } else {
-                                println("Error: Could not find mission details for '$selectedMissionName'.")
+                                println("Errore: Impossibile trovare i dettagli della missione per '$selectedMissionName'.")
                             }
                         }
                     },
@@ -112,7 +112,7 @@ fun TourPage(navController: NavHostController) {
 
                 Button(
                     onClick = {
-                        println("Pause tour: $selectedMissionName")
+                        println("Metti in pausa il tour: $selectedMissionName")
                         robotWebSocketClient.stopMissionQueue()
                         tourState = TourControlState.PAUSED
                     },
@@ -123,7 +123,7 @@ fun TourPage(navController: NavHostController) {
 
                 Button(
                     onClick = {
-                        println("Stop tour: $selectedMissionName")
+                        println("Ferma il tour: $selectedMissionName")
                         coroutineScope.launch {
                             missionService.clearMissionQueue()
                         }

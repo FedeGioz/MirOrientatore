@@ -6,7 +6,7 @@ import kotlinx.serialization.Serializable
 @Serializable
 data class RobotStatus(
     @SerialName("mode_id") val modeId: Int = -1,
-    @SerialName("mission_queue_id") val missionQueueId: String? = null,
+    @SerialName("mission_queue_id") val missionQueueId: Int? = null,
     @SerialName("robot_name") val robotName: String = "",
     @SerialName("uptime") val uptime: Long = -1,
     @SerialName("errors") val errors: List<String> = emptyList(),

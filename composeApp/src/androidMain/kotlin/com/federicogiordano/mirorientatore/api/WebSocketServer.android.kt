@@ -54,8 +54,8 @@ private data class RobotSpeedCommand(
 @Serializable
 private data class RobotVector3(
     @SerialName("x") val x: Float = 0f,
-    @SerialName("y") val y: Float = 0f,
-    @SerialName("z") val z: Float = 0f
+    val y: Float = 0f,
+    val z: Float = 0f
 )
 
 
@@ -169,7 +169,7 @@ actual class WebSocketServer {
                     }
 
                     if (statusJson == "{}" || statusJson.length < 20) {
-                        println("WebSocketServer: Warning - Serialized RobotStatus for broadcast is unexpectedly short or empty: '$statusJson'. Original status object: $robotStatus")
+                        println("WebSocketServer: Avviso - Lo stato del robot serializzato per la trasmissione è inaspettatamente corto o vuoto: '$statusJson'. Oggetto stato originale: $robotStatus")
                     }
 
                     val statusMessage = WebSocketMessage(
@@ -205,7 +205,7 @@ actual class WebSocketServer {
         scope.launch {
             studentSessions.forEach { (id, session) ->
                 try {
-                    session.close(CloseReason(CloseReason.Codes.GOING_AWAY, "Server shutdown"))
+                    session.close(CloseReason(CloseReason.Codes.GOING_AWAY, "Spegnimento del server"))
                 } catch (e: Exception) {
                     println("Errore durante la chiusura della sessione per $id: ${e.message}")
                 }
@@ -309,16 +309,16 @@ actual class WebSocketServer {
                 if (session.isActive) {
                     session.send(Frame.Text(messageJson))
                 } else {
-                    println("Tentativo di broadcast su sessione non attiva per lo studente $id.")
+                    println("Tentativo di trasmissione su sessione non attiva per lo studente $id.")
                     disconnectedIds.add(id)
                 }
             } catch (e: Exception) {
-                println("Invio messaggio broadcast fallito allo studente $id: ${e.message}")
+                println("Invio messaggio di trasmissione fallito allo studente $id: ${e.message}")
                 disconnectedIds.add(id)
             }
         }
         if (disconnectedIds.isNotEmpty()) {
-            println("Studenti da disconnettere dopo il broadcast: ${disconnectedIds.joinToString(", ")}")
+            println("Studenti da disconnettere dopo la trasmissione: ${disconnectedIds.joinToString(", ")}")
         }
         disconnectedIds.forEach { handleDisconnection(it) }
     }
@@ -344,13 +344,13 @@ actual class WebSocketServer {
                     studentId,
                     WebSocketMessage("ALLOW_JOYSTICK", "Controllo joystick abilitato", "professor")
                 )
-                println("Server: Joystick access GRANTED for student $studentId - ${updatedStudent.name}")
+                println("Server: Accesso joystick CONCESSO allo studente $studentId - ${updatedStudent.name}")
 
                 if (otherStudentsWithJoystick.isNotEmpty()) {
                     _connectedStudents.value = studentMap.values.toList().sortedBy { it.name }
                 }
             }
-        } ?: println("Server: Attempted to allow joystick for unknown student $studentId")
+        } ?: println("Server: Tentativo di abilitare il joystick per uno studente sconosciuto $studentId")
     }
 
     actual suspend fun revokeJoystickForStudent(studentId: String) {
@@ -363,9 +363,9 @@ actual class WebSocketServer {
                     studentId,
                     WebSocketMessage("DISABLE_JOYSTICK", "Controllo joystick revocato", "professor")
                 )
-                println("Server: Joystick access REVOKED for student $studentId - ${updatedStudent.name}")
+                println("Server: Accesso joystick REVOCATO per lo studente $studentId - ${updatedStudent.name}")
             }
-        } ?: println("Server: Attempted to revoke joystick for unknown student $studentId")
+        } ?: println("Server: Tentativo di revocare il joystick per uno studente sconosciuto $studentId")
     }
 
     actual suspend fun revokeAllJoystickAccess() {
@@ -386,7 +386,7 @@ actual class WebSocketServer {
 
         if (stateChanged) {
             _connectedStudents.value = studentMap.values.toList().sortedBy { it.name }
-            println("Server: All joystick access revoked and internal state updated.")
+            println("Server: Tutti gli accessi al joystick sono stati revocati e lo stato interno aggiornato.")
         }
     }
 }

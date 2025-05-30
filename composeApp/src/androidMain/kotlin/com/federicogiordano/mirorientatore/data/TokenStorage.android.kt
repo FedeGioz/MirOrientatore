@@ -24,12 +24,12 @@ object AppContextStore {
 
     fun getInstance(): AppContextStore {
         if (appContext == null) {
-            throw IllegalStateException("AppContextStore must be initialized before use.")
+            throw IllegalStateException("AppContextStore deve essere inizializzato prima dell'uso.")
         }
         return this
     }
 
     fun getAppContext(): Context {
-        return appContext ?: throw IllegalStateException("Application context not initialized.")
+        return appContext ?: throw IllegalStateException("Contesto dell'applicazione non inizializzato.")
     }
 }

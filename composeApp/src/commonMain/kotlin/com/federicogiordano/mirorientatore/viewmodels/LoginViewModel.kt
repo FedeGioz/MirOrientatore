@@ -1,8 +1,6 @@
 package com.federicogiordano.mirorientatore.viewmodels
 
 import com.federicogiordano.mirorientatore.api.LoginService
-import dev.whyoleg.cryptography.CryptographyProvider
-import dev.whyoleg.cryptography.algorithms.SHA256
 import io.ktor.utils.io.core.toByteArray
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -35,18 +33,9 @@ class LoginViewModel(
 
         if (currentState.username.isEmpty() || currentState.password.isEmpty()) {
             _uiState.value = currentState.copy(
-                errorMessage = "Username and password are required"
+                errorMessage = "Nome utente e password sono obbligatori"
             )
             return
-        }
-
-        scope.launch {
-            val hashedPassword = CryptographyProvider.Default
-                .get(SHA256)
-                .hasher()
-                .hash(currentState.password.encodeToByteArray())
-            val token = Base64.encode("${currentState.username}:$hashedPassword".toByteArray())
-            println("TOKEN CREATO: $token")
         }
 
         _uiState.value = currentState.copy(
@@ -60,7 +49,7 @@ class LoginViewModel(
             _uiState.value = _uiState.value.copy(
                 isLoading = false,
                 isLoggedIn = success,
-                errorMessage = if (!success) "Login failed. Please check your credentials." else null
+                errorMessage = if (!success) "Accesso fallito. Si prega di controllare le credenziali." else null
             )
         }
     }

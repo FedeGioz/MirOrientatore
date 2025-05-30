@@ -64,6 +64,7 @@ kotlin {
             implementation(libs.datastore.preferences)
             implementation(libs.okio)
             implementation(project.dependencies.platform("org.kotlincrypto.hash:bom:0.7.0"))
+            implementation(libs.sha2)
         }
     }
 }

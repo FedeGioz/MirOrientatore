@@ -7,7 +7,7 @@ import kotlinx.serialization.Serializable
 data class StudentConnection(
     val id: String,
     val name: String,
-    val hasJoystickAccess: Boolean = false // Renamed from hasJoystickPermission for consistency
+    val hasJoystickAccess: Boolean = false
 )
 
 @Serializable

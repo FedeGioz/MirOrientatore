@@ -33,9 +33,6 @@ data class FunctionMenuItem(
 val functionMenuItems = listOf(
     FunctionMenuItem("sounds", "Suoni", "Visualizza e riproduci suoni"),
     FunctionMenuItem("mapping", "Mappatura", "Crea e gestisci mappe"),
-    FunctionMenuItem("missions", "Missioni", "Crea ed esegui missioni"),
-    FunctionMenuItem("diagnostics", "Diagnostica", "Diagnostica di sistema e risoluzione problemi"),
-    FunctionMenuItem("mission_queue", "Coda Missioni", "Avvia, elimina o riordina missioni")
 )
 
 @Composable

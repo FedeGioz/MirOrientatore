@@ -44,14 +44,14 @@ class QuizService private constructor() {
                 if (jsonString != null) {
                     val quizzes = json.decodeFromString(ListSerializer(Quiz.serializer()), jsonString)
                     _availableQuizzes.value = quizzes.sortedBy { it.title }
-                    println("Loaded ${_availableQuizzes.value.size} quizzes from $quizzesFileName")
+                    println("Caricati ${_availableQuizzes.value.size} quiz da $quizzesFileName")
                 } else {
                     _availableQuizzes.value = emptyList()
-                    println("Quiz file ($quizzesFileName) not found or empty. Initializing with no quizzes.")
+                    println("File dei quiz ($quizzesFileName) non trovato o vuoto. Inizializzazione senza quiz.")
                 }
             } catch (e: Exception) {
                 _availableQuizzes.value = emptyList()
-                println("Error loading quizzes: ${e.message}")
+                println("Errore durante il caricamento dei quiz: ${e.message}")
                 e.printStackTrace()
             }
         }
@@ -63,13 +63,13 @@ class QuizService private constructor() {
                 val jsonString = json.encodeToString(ListSerializer(Quiz.serializer()), _availableQuizzes.value)
                 val success = FileSystem.writeTextToFile(quizzesFileName, jsonString)
                 if (success) {
-                    println("Persisted ${_availableQuizzes.value.size} quizzes to $quizzesFileName")
+                    println("Salvati ${_availableQuizzes.value.size} quiz in $quizzesFileName")
                 } else {
-                    println("Failed to persist quizzes to $quizzesFileName. FileSystem might not be initialized correctly with Android Context.")
+                    println("Impossibile salvare i quiz in $quizzesFileName. FileSystem potrebbe non essere stato inizializzato correttamente con il contesto Android.")
                 }
                 success
             } catch (e: Exception) {
-                println("Error persisting quizzes: ${e.message}")
+                println("Errore durante il salvataggio dei quiz: ${e.message}")
                 e.printStackTrace()
                 false
             }
@@ -85,7 +85,7 @@ class QuizService private constructor() {
             content = Json.encodeToString(Quiz.serializer(), quiz),
             sender = "professor"
         )
-        println("Sending WebSocket message: $message")
+        println("Invio messaggio WebSocket: $message")
         webSocketServer.broadcastMessage(message)
     }
 
@@ -99,33 +99,33 @@ class QuizService private constructor() {
 
             if (!alreadyPending && !alreadyProcessed) {
                 _pendingAnswers.value = _pendingAnswers.value + answer
-                println("Answer from ${answer.studentName} for question ${answer.questionId} added to pending. Total pending: ${_pendingAnswers.value.size}")
+                println("Risposta da ${answer.studentName} per la domanda ${answer.questionId} aggiunta in sospeso. Totale in sospeso: ${_pendingAnswers.value.size}")
                 evaluateAnswer(answer.id)
             } else {
-                println("Duplicate or already processed answer ID ${answer.id} received. Ignoring.")
+                println("ID risposta ${answer.id} duplicato o già elaborato ricevuto. Ignorato.")
             }
         } else {
-            println("Received answer for inactive or mismatched quiz. QuizID: ${answer.quizId}, ActiveQuizID: ${currentActiveQuiz?.id}")
+            println("Ricevuta risposta per quiz inattivo o non corrispondente. QuizID: ${answer.quizId}, ActiveQuizID: ${currentActiveQuiz?.id}")
         }
     }
 
     fun evaluateAnswer(answerId: String) {
         val answer = _pendingAnswers.value.find { it.id == answerId }
         if (answer == null) {
-            println("Error: Answer with ID $answerId not found in pending answers for evaluation.")
+            println("Errore: Risposta con ID $answerId non trovata nelle risposte in sospeso per la valutazione.")
             return
         }
 
         val currentActiveQuiz = _activeQuiz.value
         if (currentActiveQuiz == null || answer.quizId != currentActiveQuiz.id) {
-            println("Error: Active quiz mismatch or not found during evaluation for answer $answerId. Removing from pending.")
+            println("Errore: Corrispondenza del quiz attivo non trovata o quiz non trovato durante la valutazione per la risposta $answerId. Rimozione da quelle in sospeso.")
             _pendingAnswers.value = _pendingAnswers.value.filterNot { it.id == answerId }
             return
         }
 
         val questionDefinition = currentActiveQuiz.questions.find { it.id == answer.questionId }
         if (questionDefinition == null) {
-            println("Error: Question with ID ${answer.questionId} not found in active quiz ${currentActiveQuiz.id} for answer $answerId. Removing from pending.")
+            println("Errore: Domanda con ID ${answer.questionId} non trovata nel quiz attivo ${currentActiveQuiz.id} per la risposta $answerId. Rimozione da quelle in sospeso.")
             _pendingAnswers.value = _pendingAnswers.value.filterNot { it.id == answerId }
             return
         }
@@ -148,7 +148,7 @@ class QuizService private constructor() {
                 content = Json.encodeToString(QuizAnswer.serializer(), evaluatedAnswer),
                 sender = "professor"
             )
-            println("Sending auto-evaluated answer to student ${evaluatedAnswer.studentId}: $message")
+            println("Invio risposta auto-valutata allo studente ${evaluatedAnswer.studentId}: $message")
             webSocketServer.sendToStudent(
                 evaluatedAnswer.studentId,
                 message
@@ -239,7 +239,7 @@ class QuizService private constructor() {
                     content = quizId,
                     sender = "professor"
                 )
-                println("Broadcasting quiz ended message for quiz ID: $quizId")
+                println("Trasmissione messaggio di fine quiz per ID quiz: $quizId")
                 webSocketServer.broadcastMessage(message)
             }
         }
@@ -259,7 +259,7 @@ class QuizService private constructor() {
             _availableQuizzes.value = currentQuizzes.sortedBy { it.title }
             val persistenceSuccess = persistQuizzes()
             if (!persistenceSuccess) {
-                println("Failed to persist quiz after saving: ${quiz.title}. Data might only be in memory.")
+                println("Impossibile salvare il quiz dopo il salvataggio: ${quiz.title}. I dati potrebbero essere solo in memoria.")
             }
         }
     }
@@ -269,7 +269,7 @@ class QuizService private constructor() {
             _availableQuizzes.value = _availableQuizzes.value.filterNot { it.id == quizId }
             val persistenceSuccess = persistQuizzes()
             if (!persistenceSuccess) {
-                println("Failed to persist quiz library after deleting quizId: $quizId. Data might only be in memory.")
+                println("Impossibile salvare la libreria dei quiz dopo l'eliminazione del quizId: $quizId. I dati potrebbero essere solo in memoria.")
             }
         }
     }
@@ -292,13 +292,13 @@ class QuizService private constructor() {
             _availableQuizzes.value = currentQuizMap.values.toList().sortedBy { it.title }
             val persistenceSuccess = persistQuizzes()
             if (persistenceSuccess) {
-                println("Successfully imported/updated quizzes from JSON and persisted. Total quizzes now: ${_availableQuizzes.value.size}")
+                println("Quiz importati/aggiornati con successo da JSON e salvati. Totale quiz ora: ${_availableQuizzes.value.size}")
             } else {
-                println("Imported/updated quizzes in memory from JSON, but FAILED to persist. Total quizzes in memory: ${_availableQuizzes.value.size}")
+                println("Quiz importati/aggiornati in memoria da JSON, ma NON è stato possibile salvarli. Totale quiz in memoria: ${_availableQuizzes.value.size}")
             }
             persistenceSuccess
         } catch (e: Exception) {
-            println("Error importing quizzes from JSON (decoding/processing error): ${e.message}")
+            println("Errore durante l'importazione dei quiz da JSON (errore di decodifica/elaborazione): ${e.message}")
             e.printStackTrace()
             false
         }
@@ -307,12 +307,12 @@ class QuizService private constructor() {
     fun exportQuizzesToJson(): String? {
         return try {
             if (_availableQuizzes.value.isEmpty()) {
-                println("No quizzes available to export.")
+                println("Nessun quiz disponibile per l'esportazione.")
                 return "[]"
             }
             json.encodeToString(ListSerializer(Quiz.serializer()), _availableQuizzes.value)
         } catch (e: Exception) {
-            println("Error exporting quizzes to JSON: ${e.message}")
+            println("Errore durante l'esportazione dei quiz in JSON: ${e.message}")
             e.printStackTrace()
             null
         }

@@ -17,17 +17,17 @@ class StatusService : BaseApiService() {
         return try {
             val httpResponse: HttpResponse = client.get(ApiClient.getEndpoint("status"))
             val responseBodyText: String = httpResponse.bodyAsText()
-            println("StatusService: Raw API response body: $responseBodyText")
+            println("StatusService: Corpo della risposta API grezza: $responseBodyText")
 
             val parsedStatus = json.decodeFromString<RobotStatus>(responseBodyText)
-            println("StatusService: Parsed RobotStatus object BEFORE RETURN - Battery: ${parsedStatus.battery_percentage}, StateText: '${parsedStatus.stateText}', MapID: '${parsedStatus.mapId}'")
-            println("PARSED STATUS: $parsedStatus")
+            println("StatusService: Oggetto RobotStatus analizzato PRIMA DEL RITORNO - Batteria: ${parsedStatus.battery_percentage}, StateText: '${parsedStatus.stateText}', MapID: '${parsedStatus.mapId}'")
+            println("STATO ANALIZZATO: $parsedStatus")
             parsedStatus
         } catch (e: Exception) {
-            println("StatusService: Error in getStatus() API call or parsing: ${e.message}")
+            println("StatusService: Errore nella chiamata API o nell'analisi di getStatus(): ${e.message}")
             e.printStackTrace()
-            val errorStatus = RobotStatus(stateText = "Error fetching/parsing status: ${e.message}")
-            println("StatusService: Returning error status object - StateText: '${errorStatus.stateText}'")
+            val errorStatus = RobotStatus(stateText = "Errore nel recupero/analisi dello stato: ${e.message}")
+            println("StatusService: Restituzione oggetto stato di errore - StateText: '${errorStatus.stateText}'")
             errorStatus
         }
     }
@@ -38,9 +38,9 @@ class StatusService : BaseApiService() {
 
                 emit(getStatus())
             } catch (e: Exception) {
-                println("StatusService: Error in statusFlow loop: ${e.message}")
+                println("StatusService: Errore nel ciclo statusFlow: ${e.message}")
                 val flowErrorStatus = RobotStatus(battery_percentage = 50f, stateText = "Errore di Connessione nel Flow")
-                println("StatusService: Emitting flow error status object - StateText: '${flowErrorStatus.stateText}'")
+                println("StatusService: Emissione oggetto stato di errore del flow - StateText: '${flowErrorStatus.stateText}'")
                 emit(flowErrorStatus)
             }
             delay(intervalSeconds * 1000)

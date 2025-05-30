@@ -51,9 +51,9 @@ fun LoginScreen(
         verticalArrangement = Arrangement.Center
     ) {
         Text(
-            text = "Mirage Robot Control",
+            text = "MirOrientatore",
             style = MaterialTheme.typography.headlineMedium,
-            modifier = Modifier.padding(bottom = 32.dp)
+            modifier = Modifier.padding(bottom = 32.dp).align(Alignment.CenterHorizontally)
         )
 
         OutlinedTextField(

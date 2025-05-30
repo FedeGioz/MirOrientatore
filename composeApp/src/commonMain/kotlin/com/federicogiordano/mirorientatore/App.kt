@@ -36,7 +36,7 @@ fun App(
 
     NavHost(
         navController = navController,
-        startDestination = Screens.Login.name
+        startDestination = Screens.Home.name
     ) {
         composable(Screens.Login.name) {
             val loginViewModel = remember { LoginViewModel(loginService) }
@@ -86,10 +86,7 @@ fun App(
 
             when (functionId) {
                 "mapping" -> MapsList(navController)
-                "missions" -> MissionsList(navController)
-                "mission_queue" -> MissionQueue(navController)
                 "sounds" -> SoundsList(navController)
-                "diagnostics" -> DiagnosticsScreen(navController)
             }
         }
     }

@@ -5,9 +5,9 @@ import androidx.compose.material.icons.filled.LibraryBooks
 import androidx.compose.ui.graphics.vector.ImageVector
 
 sealed class SettingsFunction(val route: String, val title: String, val icon: ImageVector) {
-    object QuizLibrary : SettingsFunction(
+    data object QuizLibrary : SettingsFunction(
         route = "settings_quiz_library",
-        title = "Quiz Library",
+        title = "Libreria Quiz",
         icon = Icons.Filled.LibraryBooks
     ) }
 

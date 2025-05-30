@@ -13,17 +13,17 @@ actual object FileSystem {
     actual fun initialize(context: Any?) {
         if (this.appContext == null && context is Context) {
             this.appContext = context.applicationContext
-            println("FileSystem initialized with Android context.")
+            println("FileSystem inizializzato con contesto Android.")
         } else if (this.appContext != null) {
-            println("FileSystem already initialized.")
+            println("FileSystem già inizializzato.")
         } else if (context == null) {
-            println("Warning: FileSystem initialize called with null context, and not yet initialized. File operations may fail.")
+            println("Attenzione: FileSystem initialize chiamato con contesto null, e non ancora inizializzato. Le operazioni sui file potrebbero fallire.")
         }
     }
 
     private fun getFilesDir(): File? {
         if (appContext == null) {
-            println("Error: FileSystem (for internal files) not initialized. Call initialize(context) first.")
+            println("Errore: FileSystem (per i file interni) non inizializzato. Chiamare prima initialize(context).")
             return null
         }
         return appContext?.filesDir
@@ -36,11 +36,11 @@ actual object FileSystem {
             if (file.exists()) {
                 file.readText()
             } else {
-                println("File not found: ${file.absolutePath}")
+                println("File non trovato: ${file.absolutePath}")
                 null
             }
         } catch (e: IOException) {
-            println("Error reading file $fileName: ${e.message}")
+            println("Errore durante la lettura del file $fileName: ${e.message}")
             e.printStackTrace()
             null
         }
@@ -51,10 +51,10 @@ actual object FileSystem {
         val file = File(filesDir, fileName)
         return try {
             file.writeText(content)
-            println("Successfully wrote to file: ${file.absolutePath}")
+            println("Scrittura del file completata con successo: ${file.absolutePath}")
             true
         } catch (e: IOException) {
-            println("Error writing file $fileName: ${e.message}")
+            println("Errore durante la scrittura del file $fileName: ${e.message}")
             e.printStackTrace()
             false
         }
@@ -64,7 +64,7 @@ actual object FileSystem {
         return try {
             context.contentResolver.openInputStream(uri)?.bufferedReader()?.use { it.readText() }
         } catch (e: Exception) {
-            println("Error reading from URI $uri: ${e.message}")
+            println("Errore durante la lettura da URI $uri: ${e.message}")
             e.printStackTrace()
             null
         }
@@ -75,7 +75,7 @@ actual object FileSystem {
             context.contentResolver.openOutputStream(uri)?.bufferedWriter()?.use { it.write(content) }
             true
         } catch (e: Exception) {
-            println("Error writing to URI $uri: ${e.message}")
+            println("Errore durante la scrittura su URI $uri: ${e.message}")
             e.printStackTrace()
             false
         }
