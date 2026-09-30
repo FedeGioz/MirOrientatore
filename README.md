@@ -1,24 +1,36 @@
-MirOriento:
+# MirOrientatore
 
-2 App separate: professore e studente
+Teacher app for the orientation days at ITIS Mario Delpozzo (Cuneo). It runs on the teacher's tablet, drives the school's MiR robot through a guided tour and coordinates the visitors' phones, which use the student app [MirOriento](https://github.com/FedeGioz/MirOriento).
 
-Professore (riciclare app principale):
-- Joystick FATTO (sistemare gestione stati per bottone)
-- Gestione manuale sounds FATTO (migliorare dialog)
-- Map selector FATTO
-- Mission executor TESTARE
-- Diagnostics SISTEMARE
-- Gestione app studenti e robot FATTO LISTA STUDENTI (Abbellire e testare joystick, magari aggiungere altro)
-- Starter programmi orientamento --> Testare, capire come fare per i quiz, magari appena viene mandato pausa il robot e poi fa ripartire quando stoppa (mettere piccolo timeout nella missione)
-- FIXARE STOP QUIZ E DISCONNECT PER MIRORIENTO
-- FARE TUTORIAL DELL'APP SPIEGATA DAL ROBOT DOPO AUDIO ATRIO
-- Generazione di un report PDF con le risposte e sondaggi alla fine
+It reuses the robot control code from [MiRage](https://github.com/FedeGioz/MiRage) and adds a server for the students on top of it.
 
-Studente:
-- Input del nome per identificare gli alunni e misurare anche competenze medie/turnover di iscrizione FATTO
-- Binding con professore con qr/aztec code FATTO (creare adesivo qr code per dimostrazione)
-- Visualizzazione mappa del robot e 3d scan TESTARE/DA FARE (POSIZIONE, LASER SCAN, SENSORI)
-- Richiesta di controllo al prof --> mettere i protective fields per evitare schianti e max speed TESTARE
-- Brochure digitale dopo la visita che rimane tipo una history con i quiz e il materiale condiviso FATTO
-- Cambio colore in contemporanea (mettere delay per evitare distrazioni durante visita, capire mutex) --> Capire websocket (solo missione) CAPIRE, PENSO NON SI POSSA FARE SENZA MISSIONE (INTACCHEREBBE TOUR)
-- Piccolo sondaggio personale e feedback a fine visita mandabile da prof, consigliare magari indirizzo alla fine DA FARE
+## Features
+
+- Robot control from MiRage: login, live status, joystick, maps (with the full map image), missions and sounds
+- Tour page to run the guided tour as a sequence of robot missions
+- Quiz library: pick a quiz and send it to every connected student, answers come back in real time
+- List of connected students, with the option to hand the joystick to one of them
+- Embedded WebSocket server that the student app connects to
+
+## How it works
+
+```
+Student phones (MirOriento)  <--WebSocket-->  Teacher tablet (MirOrientatore)  <--REST / rosbridge-->  MiR robot
+```
+
+The tablet runs a Ktor server (Netty engine) on port 8080, with WebSocket pings every 5 seconds to spot phones that dropped off. The app keeps the list of connected students, pushes quizzes, robot status and map updates, and receives answers and joystick commands. A joystick command from a student is forwarded to the robot's rosbridge interface only if that student currently has control, so the teacher can take it back at any time.
+
+Robot communication works as in MiRage: REST API for status, maps, missions and sounds, rosbridge WebSocket for driving.
+
+## Tech stack
+
+- Kotlin Multiplatform with Compose Multiplatform (Android target)
+- Ktor server with WebSockets, Ktor client, kotlinx.serialization
+
+## Running it
+
+1. Open the project in Android Studio and run the `composeApp` configuration on the tablet
+2. Connect the tablet to the robot and turn on its hotspot for the students
+3. Log in with a robot user account and start the tour
+
+The interface is in Italian, since it was made for an Italian school.
